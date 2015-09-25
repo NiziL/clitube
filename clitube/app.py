@@ -1,4 +1,3 @@
-#! /usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import requests
@@ -154,6 +153,6 @@ def main(stdscr):
         player.kill()
 
 
-if __name__ == '__main__':
+def start():
     init()
     curses.wrapper(main)
