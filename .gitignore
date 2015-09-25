@@ -1,2 +1,5 @@
 .*.swp
 .*.swo
+build
+clitube.egg-info
+dist
