@@ -3,38 +3,24 @@
 
 import requests
 import re
+import youtube_dl
 import os
 import subprocess
 import curses
 
 pattern_id = re.compile("(?<=data-context-item-id=\")[\w-]{11}(?=\")")
-pattern_name = re.compile("(?<=dir=\"ltr\">).*(?=</a><span)")
 search_url = "https://www.youtube.com/results?filters=video&search_query={}"
 video_url = "https://www.youtube.com/watch?v={}"
-clitube_data_pipe = "/tmp/clitube-data-pipe"
-clitube_cmd_pipe = "/tmp/clitube-cmd-pipe"
+data_pipe = "/tmp/clitube-data"
 
 FNULL = open(os.devnull, 'wb')
 
 
-def unquote(s):
-    return s.replace('&#39;', '\'').replace('&amp;', '&')
-
-
-def search_on_youtube(query):
-    r = requests.get(search_url.format(query))
-    if r.status_code == 200:
-        name_matches = re.findall(pattern_name, r.text)
-        id_matches = re.findall(pattern_id, r.text)
-        return zip(name_matches, id_matches)
-    else:
-        raise Exception("YouTube is broken :(")
-
-
 class Item(object):
-    def __init__(self, name, uid):
-        self._name = name
+    def __init__(self, uid, name, duration):
         self._uid = uid
+        self._name = name
+        self._duration = duration
 
     @property
     def name(self):
@@ -44,123 +30,76 @@ class Item(object):
     def uid(self):
         return self._uid
 
-
-class Player(object):
-    def __init__(self):
-        self._run = False
-        # init the pipe between youtube-dl and mplayer
-        subprocess.call(['mkfifo', clitube_data_pipe],
-                        stdout=FNULL, stderr=subprocess.STDOUT)
-        subprocess.call(['mkfifo', clitube_cmd_pipe],
-                        stdout=FNULL, stderr=subprocess.STDOUT)
-
     @property
-    def run(self):
-        return self._run
-
-    def play(self, uid):
-        self._youtube_dl = subprocess.Popen(['youtube-dl',
-                                             '-q', video_url.format(uid),
-                                             '-o', clitube_data_pipe],
-                                            stdout=FNULL,
-                                            stderr=subprocess.STDOUT)
-        self._mplayer = subprocess.Popen(['mplayer',
-                                          '-vo', 'null',
-                                          'input',
-                                          'file={}'.format(clitube_cmd_pipe),
-                                          clitube_data_pipe],
-                                         stdout=FNULL,
-                                         stderr=subprocess.STDOUT)
-        self._run = True
-
-    def terminate(self):
-        self._youtube_dl.terminate()
-        self._mplayer.terminate()
-        self._run = False
-
-    def kill(self):
-        self._youtube_dl.kill()
-        self._mplayer.kill()
-        self._run = False
+    def duration(self):
+        return self._duration
 
 
-# might rename this shit :P
-def do_stuff(stdscr):
-    height, width = stdscr.getmaxyx()
+def youtube_search(search):
+    r = requests.get(search_url.format(search))
+    if r.status_code == 200:
+        return re.findall(pattern_id, r.text)
+    else:
+        raise Exception("YouTube is broken :(")
 
-    stdscr.clear()
-    stdscr.box()
-    stdscr.addstr(0, int(width/2)-4, u" CLITube ",
-                  curses.color_pair(2) | curses.A_BOLD)
-    stdscr.refresh()
 
-    search_scr = curses.newwin(height-2, int(width/2), 1, 1)
-    search_scr.clear()
-    search_scr.box()
-    search_scr.addstr(0, int(width/4)-4, u" Search ")
-    search_scr.refresh()
+def init():
+    subprocess.call(['mkdir', '/tmp/clitube'],
+                    stdout=FNULL,
+                    stderr=FNULL)
+    subprocess.call(['mkfifo', data_pipe],
+                    stdout=FNULL,
+                    stderr=FNULL)
 
-    playlist_scr = curses.newwin(height-2, int(width/2)-2, 1, int(width/2)+1)
-    playlist_scr.clear()
-    playlist_scr.box()
-    playlist_scr.addstr(0, int(width/4)-5, u" Playlist ")
-    playlist_scr.refresh()
 
-    return search_scr, playlist_scr
+def init_ydl():
+    options = {
+        'format': 'bestaudio/best',
+        'extractaudio': True,
+        'outtmpl': '/tmp/clitube/%(id)s',
+        'noplaylist': True,
+        'quiet': True,
+        'no_warnings': True
+    }
+    return youtube_dl.YoutubeDL(options)
 
 
 def main(stdscr):
-    player = Player()
+    ydl = init_ydl()
+    player = None
+    # subprocess.Popen(['mplayer', '/tmp/clitube-data'],
+    #                  stdout=FNULL,
+    #                  stderr=FNULL)
 
-    items = []
-    selected = []
-    position = 0
-
-    curses.init_pair(1, curses.COLOR_YELLOW, curses.COLOR_BLACK)
-    curses.init_pair(2, curses.COLOR_RED, curses.COLOR_BLACK)
+    curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
+    curses.init_pair(2, curses.COLOR_YELLOW, curses.COLOR_BLACK)
     curses.curs_set(False)
 
     height, width = stdscr.getmaxyx()
-    search_scr, playlist_scr = do_stuff(stdscr)
+
+    stdscr.clear()
+    stdscr.addstr(0, int(width/2)-4, u"CLItube", curses.color_pair(1))
+    stdscr.refresh()
+
+    items = []
+    position = 0
+    selected = []
 
     while True:
-        if (height, width) != stdscr.getmaxyx():
-            height, width = stdscr.getmaxyx()
-            search_scr, playlist_scr = do_stuff(stdscr)
+        for i, item in enumerate(items):
+            style = 0
+            if i == position and i in selected:
+                style = curses.A_REVERSE | curses.color_pair(2)
+            elif i == position:
+                style = curses.A_REVERSE
+            elif i in selected:
+                style = curses.color_pair(2)
+            stdscr.addstr(i+2, 0, item.name, style)
 
         c = stdscr.getch()
 
-        if (height, width) != stdscr.getmaxyx():
-            height, width = stdscr.getmaxyx()
-            search_scr, playlist_scr = do_stuff(stdscr)
-
         if c == ord('q'):
-            if player.run:
-                player.terminate()
             break
-
-        elif c == ord('/'):
-            search_scr.addstr(height-4, 1, u"/")
-            search = ""
-
-            c = search_scr.getch()
-            while c != ord('\n'):
-                if c == 127: # curses.KEY_BACKSPACE: doesn't work on ubuntu ?
-                    search = search[:-1]
-                else:
-                    search += chr(c)
-                nb_space = int(width/2)-len(search)-5
-                search_scr.addstr(height-4, 1,
-                                  u"/" + search + u" "*nb_space)
-                c = search_scr.getch()
-            search_scr.addstr(height-4, 1, ' '*(int(width/2)-2))
-
-            if search != "":
-                results = search_on_youtube(search)
-                items = []
-                position = 0
-                for name, uid in results:
-                    items.append(Item(unquote(name), uid))
 
         elif c == ord('j') or c == curses.KEY_DOWN:
             if len(items) > 0:
@@ -179,29 +118,50 @@ def main(stdscr):
                 selected.append(position)
 
         elif c == ord('\n'):
-            if player.run:
-                player.terminate()
-            player.play(items[position].uid)
+            uid = items[position].uid
+            with ydl:
+                ydl.download([video_url.format(uid)])
+            if player is not None:
+                player.kill()
+            player = subprocess.Popen(['mplayer',
+                                       '/tmp/clitube/%s' % uid],
+                                      stdout=FNULL,
+                                      stderr=FNULL)
 
-        for line, item in enumerate(items):
-            style = 0
-            if line == position and line in selected:
-                style = curses.A_REVERSE | curses.color_pair(1)
-            elif line == position:
-                style = curses.A_REVERSE
-            elif line in selected:
-                style = curses.color_pair(1)
-            search_scr.addstr(line+1, 1,
-                              item.name + " "*(int(width/2)-len(item.name)-2),
-                              style)
+        elif c == ord('/'):
+            stdscr.addstr(height-1, 0, u"search: ")
+            search = ""
 
-        playlist_scr.refresh()
-        search_scr.refresh()
+            c = stdscr.getch()
+            while c != ord('\n'):
+                if c == curses.KEY_BACKSPACE:
+                    search = search[:-1]
+                else:
+                    search += chr(c)
+                stdscr.addstr(height-1, 0, u"search: "+search+u" ")
+                c = stdscr.getch()
+            stdscr.deleteln()
+
+            if search != "":
+                with ydl:
+                    items = []
+                    for i, uid in enumerate(youtube_search(search)):
+                        r = ydl.extract_info(video_url.format(uid),
+                                             download=False)
+
+                        items.append(Item(uid, r['title'], r['duration']))
+
+                        stdscr.addstr(2+i, 0,
+                                      "%s [%s\"]" % (r['title'],
+                                                     r['duration']))
+                        stdscr.clrtoeol()
+                        stdscr.refresh()
         stdscr.refresh()
 
-    if player.run:
-        player.terminate()
+    if player is not None:
+        player.kill()
 
 
 if __name__ == '__main__':
+    init()
     curses.wrapper(main)
