@@ -8,12 +8,10 @@ import os
 import subprocess
 import curses
 
+FNULL = open(os.devnull, 'wb')
 pattern_id = re.compile("(?<=data-context-item-id=\")[\w-]{11}(?=\")")
 search_url = "https://www.youtube.com/results?filters=video&search_query={}"
 video_url = "https://www.youtube.com/watch?v={}"
-data_pipe = "/tmp/clitube-data"
-
-FNULL = open(os.devnull, 'wb')
 
 
 class Item(object):
@@ -47,9 +45,6 @@ def init():
     subprocess.call(['mkdir', '/tmp/clitube'],
                     stdout=FNULL,
                     stderr=FNULL)
-    subprocess.call(['mkfifo', data_pipe],
-                    stdout=FNULL,
-                    stderr=FNULL)
 
 
 def init_ydl():
@@ -67,9 +62,6 @@ def init_ydl():
 def main(stdscr):
     ydl = init_ydl()
     player = None
-    # subprocess.Popen(['mplayer', '/tmp/clitube-data'],
-    #                  stdout=FNULL,
-    #                  stderr=FNULL)
 
     curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
     curses.init_pair(2, curses.COLOR_YELLOW, curses.COLOR_BLACK)
