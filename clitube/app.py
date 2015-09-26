@@ -60,6 +60,8 @@ def init_ydl():
 
 
 def main(stdscr):
+    # initialization, tmp directory, youtube-dl api
+    init()
     ydl = init_ydl()
     player = None
 
@@ -67,18 +69,17 @@ def main(stdscr):
     curses.init_pair(2, curses.COLOR_YELLOW, curses.COLOR_BLACK)
     curses.curs_set(False)
 
-    height, width = stdscr.getmaxyx()
-
-    stdscr.clear()
-    stdscr.addstr(0, int(width/2)-4, u"CLItube", curses.color_pair(1))
-    stdscr.refresh()
-
     items = []
     position = 0
     selected = []
 
     while True:
         # render
+        height, width = stdscr.getmaxyx()
+
+        stdscr.clear()
+        stdscr.addstr(0, int(width/2)-4, u"CLItube", curses.color_pair(1))
+        stdscr.refresh()
         for i, item in enumerate(items):
             style = 0
             if i == position and i in selected:
@@ -122,17 +123,22 @@ def main(stdscr):
         elif c == ord('l'):
             uid = items[position].uid
             name = '/tmp/clitube/%s' % uid
+            subprocess.Popen(['mkfifo', name],
+                             stdout=FNULL, stderr=FNULL)
             url = video_url.format(uid)
-            subprocess.Popen(['youtube-dl',
-                              url
-                              '-f', 'bestaudio',
-                              '-x',
+            subprocess.Popen(['youtube-dl', url,
+                              #'-f', 'bestaudio',
                               '-o', name],
                              stdout=FNULL, stderr=FNULL)
+
+            # if os.path.isfile('%s.part' % name):
+            #     stdscr.addstr(height-1, 0, 'playing...')
+            #     name = '%s.part' % name
+
             if player is not None:
                 player.kill()
-            player = subprocess.Popen(['mplayer', name],
-                                      stdout=FNULL, stderr=FNULL)
+            player = subprocess.Popen(['mplayer', '-vo', 'null', name],
+                                          stdout=FNULL, stderr=FNULL)
 
         elif c == ord('/'):
             stdscr.addstr(height-1, 0, u"search: ")
@@ -155,10 +161,14 @@ def main(stdscr):
                     items.append(Item(uid, name))
         stdscr.refresh()
 
+        if player is not None:
+            player.poll()
+            if player.returncode is not None:
+
+
     if player is not None:
         player.kill()
 
 
 def start():
-    init()
     curses.wrapper(main)
