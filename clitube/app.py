@@ -42,7 +42,10 @@ def youtube_search(search):
 
 
 def init():
-    os.mkfifo(PIPE_STREAM)
+    try:
+        os.mkfifo(PIPE_STREAM)
+    except:
+        pass
 
 
 def play(uid):
@@ -75,24 +78,32 @@ def main(stdscr):
 
     toplay = []
 
+    height, width = stdscr.getmaxyx()
+    redraw = True
+
     while True:
         # renderer
-        # ugly piece of code here, should render only on resize and/or on change in items
-        height, width = stdscr.getmaxyx()
+        # ugly piece of code here
+        if (height, width) != stdscr.getmaxyx():
+            redraw = True
 
-        stdscr.clear()
-        stdscr.addstr(0, int(width/2)-4, u"CLItube", curses.color_pair(1))
-        for i, item in enumerate(items):
-            style = 0
-            if i == position and i in selected:
-                style = curses.A_REVERSE | curses.color_pair(2)
-            elif i == position:
-                style = curses.A_REVERSE
-            elif i in selected:
-                style = curses.color_pair(2)
-            stdscr.addstr(i+2, 0, item.name, style)
-            stdscr.clrtoeol()
-        stdscr.refresh()
+        if redraw:
+            height, width = stdscr.getmaxyx()
+
+            stdscr.clear()
+            stdscr.addstr(0, int(width/2)-4, u"CLItube", curses.color_pair(1))
+            for i, item in enumerate(items):
+                style = 0
+                if i == position and i in selected:
+                    style = curses.A_REVERSE | curses.color_pair(2)
+                elif i == position:
+                    style = curses.A_REVERSE
+                elif i in selected:
+                    style = curses.color_pair(2)
+                stdscr.addstr(i+2, 0, item.name, style)
+                stdscr.clrtoeol()
+            stdscr.refresh()
+            redraw = False
 
         # sound "engine", hum...
         if len(toplay) > 0:
@@ -161,6 +172,7 @@ def main(stdscr):
                 items = []
                 for uid, name in youtube_search(search):
                     items.append(Item(uid, name))
+                redraw = True
 
     if not player is None:
         player.kill()
