@@ -8,10 +8,11 @@ import subprocess
 import curses
 
 FNULL = open(os.devnull, 'wb')
-pattern_id = re.compile("(?<=data-context-item-id=\")[\w-]{11}(?=\")")
-pattern_name = re.compile("(?<=dir=\"ltr\">).*(?=</a><span)")
-search_url = "https://www.youtube.com/results?filters=video&search_query={}"
-video_url = "https://www.youtube.com/watch?v={}"
+
+PATTERN_ID = re.compile("(?<=data-context-item-id=\")[\w-]{11}(?=\")")
+PATTERN_NAME = re.compile("(?<=dir=\"ltr\">).*(?=</a><span)")
+URL_SEARCH = "https://www.youtube.com/results?filters=video&search_query={}"
+URL_VIDEO = "https://www.youtube.com/watch?v={}"
 
 
 class Item(object):
@@ -33,10 +34,10 @@ def unquote(s):
 
 
 def youtube_search(search):
-    r = requests.get(search_url.format(search))
+    r = requests.get(URL_SEARCH.format(search))
     if r.status_code == 200:
-        return zip(re.findall(pattern_id, r.text),
-                   map(unquote, re.findall(pattern_name, r.text)))
+        return zip(re.findall(PATTERN_ID, r.text),
+                   map(unquote, re.findall(PATTERN_NAME, r.text)))
     else:
         raise Exception("YouTube is broken :(")
 
@@ -45,6 +46,22 @@ def init():
     subprocess.call(['mkdir', '/tmp/clitube'],
                     stdout=FNULL,
                     stderr=FNULL)
+
+    subprocess.Popen(['mkfifo', '/tmp/clitube/stream'],
+                     stdout=FNULL, stderr=FNULL)
+
+
+def play(uid):
+    url = URL_VIDEO.format(uid)
+
+    dl = subprocess.Popen(['youtube-dl', url,
+                           '-o', '/tmp/clitube/stream'],
+                          stdout=FNULL, stderr=FNULL)
+
+    player = subprocess.Popen(['mplayer', '-vo', 'null', '/tmp/clitube/stream'],
+                              stdout=FNULL, stderr=FNULL)
+
+    return dl, player
 
 
 def init_ydl():
@@ -62,16 +79,19 @@ def init_ydl():
 def main(stdscr):
     # initialization, tmp directory, youtube-dl api
     init()
-    ydl = init_ydl()
-    player = None
+    # ydl = init_ydl()
+    dl = player = None
 
     curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
     curses.init_pair(2, curses.COLOR_YELLOW, curses.COLOR_BLACK)
+
     curses.curs_set(False)
 
     items = []
     position = 0
     selected = []
+
+    toplay = []
 
     while True:
         # render
@@ -79,7 +99,6 @@ def main(stdscr):
 
         stdscr.clear()
         stdscr.addstr(0, int(width/2)-4, u"CLItube", curses.color_pair(1))
-        stdscr.refresh()
         for i, item in enumerate(items):
             style = 0
             if i == position and i in selected:
@@ -90,6 +109,19 @@ def main(stdscr):
                 style = curses.color_pair(2)
             stdscr.addstr(i+2, 0, item.name, style)
             stdscr.clrtoeol()
+        stdscr.refresh()
+
+        # sound stuffes here, I must thread all of this
+        # or make getch() non-bloquant
+        if len(toplay) > 0:
+            if player is None:
+                dl, player = play(toplay[0].uid)
+            else:
+                player.poll()
+                dl.poll()
+                if not player.returncode is None:
+                    player = None
+                    toplay.pop(0)
 
         # controller
         c = stdscr.getch()
@@ -121,24 +153,7 @@ def main(stdscr):
                 selected.append(position)
 
         elif c == ord('l'):
-            uid = items[position].uid
-            name = '/tmp/clitube/%s' % uid
-            subprocess.Popen(['mkfifo', name],
-                             stdout=FNULL, stderr=FNULL)
-            url = video_url.format(uid)
-            subprocess.Popen(['youtube-dl', url,
-                              #'-f', 'bestaudio',
-                              '-o', name],
-                             stdout=FNULL, stderr=FNULL)
-
-            # if os.path.isfile('%s.part' % name):
-            #     stdscr.addstr(height-1, 0, 'playing...')
-            #     name = '%s.part' % name
-
-            if player is not None:
-                player.kill()
-            player = subprocess.Popen(['mplayer', '-vo', 'null', name],
-                                          stdout=FNULL, stderr=FNULL)
+            toplay.append(items[position])
 
         elif c == ord('/'):
             stdscr.addstr(height-1, 0, u"search: ")
@@ -159,14 +174,8 @@ def main(stdscr):
                 items = []
                 for uid, name in youtube_search(search):
                     items.append(Item(uid, name))
-        stdscr.refresh()
 
-        if player is not None:
-            player.poll()
-            if player.returncode is not None:
-
-
-    if player is not None:
+    if not player is None:
         player.kill()
 
 
