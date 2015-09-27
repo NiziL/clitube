@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import requests
+import html
 import re
 import youtube_dl
 import os
@@ -13,6 +14,8 @@ PATTERN_ID = re.compile("(?<=data-context-item-id=\")[\w-]{11}(?=\")")
 PATTERN_NAME = re.compile("(?<=dir=\"ltr\">).*(?=</a><span)")
 URL_SEARCH = "https://www.youtube.com/results?filters=video&search_query={}"
 URL_VIDEO = "https://www.youtube.com/watch?v={}"
+
+PIPE_STREAM = "/tmp/clitube-stream"
 
 
 class Item(object):
@@ -29,63 +32,42 @@ class Item(object):
         return self._uid
 
 
-def unquote(s):
-    return s.replace('&amp;', '&')
-
-
 def youtube_search(search):
     r = requests.get(URL_SEARCH.format(search))
     if r.status_code == 200:
         return zip(re.findall(PATTERN_ID, r.text),
-                   map(unquote, re.findall(PATTERN_NAME, r.text)))
+                   map(html.unescape, re.findall(PATTERN_NAME, r.text)))
     else:
         raise Exception("YouTube is broken :(")
 
 
 def init():
-    subprocess.call(['mkdir', '/tmp/clitube'],
-                    stdout=FNULL,
-                    stderr=FNULL)
-
-    subprocess.Popen(['mkfifo', '/tmp/clitube/stream'],
-                     stdout=FNULL, stderr=FNULL)
+    os.mkfifo(PIPE_STREAM)
 
 
 def play(uid):
     url = URL_VIDEO.format(uid)
 
     dl = subprocess.Popen(['youtube-dl', url,
-                           '-o', '/tmp/clitube/stream'],
+                           '-o', PIPE_STREAM],
                           stdout=FNULL, stderr=FNULL)
 
-    player = subprocess.Popen(['mplayer', '-vo', 'null', '/tmp/clitube/stream'],
+    player = subprocess.Popen(['mplayer', '-vo', 'null', PIPE_STREAM],
                               stdout=FNULL, stderr=FNULL)
 
     return dl, player
 
 
-def init_ydl():
-    options = {
-        'format': 'bestaudio/best',
-        'extractaudio': True,
-        'outtmpl': '/tmp/clitube/%(id)s',
-        'noplaylist': True,
-        'quiet': True,
-        'no_warnings': True
-    }
-    return youtube_dl.YoutubeDL(options)
-
-
 def main(stdscr):
     # initialization, tmp directory, youtube-dl api
     init()
-    # ydl = init_ydl()
     dl = player = None
 
     curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
     curses.init_pair(2, curses.COLOR_YELLOW, curses.COLOR_BLACK)
 
     curses.curs_set(False)
+    curses.halfdelay(5)
 
     items = []
     position = 0
@@ -94,7 +76,8 @@ def main(stdscr):
     toplay = []
 
     while True:
-        # render
+        # renderer
+        # ugly piece of code here, should render only on resize and/or on change in items
         height, width = stdscr.getmaxyx()
 
         stdscr.clear()
@@ -111,8 +94,7 @@ def main(stdscr):
             stdscr.clrtoeol()
         stdscr.refresh()
 
-        # sound stuffes here, I must thread all of this
-        # or make getch() non-bloquant
+        # sound "engine", hum...
         if len(toplay) > 0:
             if player is None:
                 dl, player = play(toplay[0].uid)
@@ -124,7 +106,10 @@ def main(stdscr):
                     toplay.pop(0)
 
         # controller
-        c = stdscr.getch()
+        try:
+            c = stdscr.getch()
+        except:
+            c = -1
 
         if c == ord('q'):
             break
@@ -159,7 +144,13 @@ def main(stdscr):
             stdscr.addstr(height-1, 0, u"search: ")
             search = ""
 
-            c = stdscr.getch()
+            c = -1
+            while c == -1:
+                try:
+                    c = stdscr.getch()
+                except:
+                    c = -1
+
             while c != ord('\n'):
                 if c == curses.KEY_BACKSPACE:
                     search = search[:-1]
@@ -167,7 +158,14 @@ def main(stdscr):
                     search += chr(c)
                 stdscr.addstr(height-1, 8, search)
                 stdscr.clrtoeol()
-                c = stdscr.getch()
+
+                c = -1
+                while c == -1:
+                    try:
+                        c = stdscr.getch()
+                    except:
+                        c = -1
+
             stdscr.deleteln()
 
             if search != "":
