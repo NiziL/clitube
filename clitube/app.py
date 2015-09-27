@@ -67,7 +67,7 @@ def main(stdscr):
     curses.init_pair(2, curses.COLOR_YELLOW, curses.COLOR_BLACK)
 
     curses.curs_set(False)
-    curses.halfdelay(5)
+    stdscr.nodelay(True)
 
     items = []
     position = 0
@@ -106,10 +106,7 @@ def main(stdscr):
                     toplay.pop(0)
 
         # controller
-        try:
-            c = stdscr.getch()
-        except:
-            c = -1
+        c = stdscr.getch()
 
         if c == ord('q'):
             break
@@ -144,12 +141,8 @@ def main(stdscr):
             stdscr.addstr(height-1, 0, u"search: ")
             search = ""
 
-            c = -1
-            while c == -1:
-                try:
-                    c = stdscr.getch()
-                except:
-                    c = -1
+            stdscr.nodelay(False)
+            c = stdscr.getch()
 
             while c != ord('\n'):
                 if c == curses.KEY_BACKSPACE:
@@ -159,14 +152,10 @@ def main(stdscr):
                 stdscr.addstr(height-1, 8, search)
                 stdscr.clrtoeol()
 
-                c = -1
-                while c == -1:
-                    try:
-                        c = stdscr.getch()
-                    except:
-                        c = -1
+                c = stdscr.getch()
 
             stdscr.deleteln()
+            stdscr.nodelay(True)
 
             if search != "":
                 items = []
