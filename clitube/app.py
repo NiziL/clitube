@@ -94,6 +94,18 @@ def main(stdscr):
     height, width = None, None
 
     while True:
+        # sound "engine", hum...
+        if len(toplay) > 0:
+            if player is None:
+                dl, player = play(toplay[0].uid)
+            else:
+                player.poll()
+                dl.poll()
+                if not player.returncode is None:
+                    player = None
+                    toplay.pop(0)
+                    redraw = True
+
         # renderer
         # ugly piece of code here
         if (height, width) != stdscr.getmaxyx():
@@ -118,26 +130,30 @@ def main(stdscr):
                     style = curses.A_REVERSE
                 elif i + print_min in selected:
                     style = curses.color_pair(2)
-                stdscr.addstr(i+1, 0, item.name, style)
+
+                if len(item.name) > int(width/2):
+                    display = item.name[:int(width/2)]
+                else:
+                    display = item.name + u' '*(int(width/2) - len(item.name))
+
+                stdscr.addstr(i+1, 0, display, style)
                 stdscr.clrtoeol()
+
+            for i, item in enumerate(toplay[:height-1]):
+                if len(item.name) > int(width/2)-2:
+                    display = item.name[:int(width/2)-2]
+                else:
+                    display = item.name + u' '*(int(width/2)-2 - len(item.name))
+                stdscr.addstr(i+1, int(width/2)+1, display)
+                stdscr.clrtoeol()
+                
             stdscr.refresh()
             redraw = False
-
-        # sound "engine", hum...
-        if len(toplay) > 0:
-            if player is None:
-                dl, player = play(toplay[0].uid)
-            else:
-                player.poll()
-                dl.poll()
-                if not player.returncode is None:
-                    player = None
-                    toplay.pop(0)
 
         # controller
         c = stdscr.getch()
 
-        if c == ord('q'):
+        if c == ord('q') or c == 27:
             break
 
         elif c == ord('j'):
@@ -173,6 +189,7 @@ def main(stdscr):
 
         elif c == ord('l'):
             toplay.append(items[position])
+            redraw = True
 
         elif c == ord('/'):
             stdscr.addstr(height-1, 0, u"search: ")
@@ -181,7 +198,7 @@ def main(stdscr):
             with delay_on(stdscr):
                 c = stdscr.getch()
 
-                while c != ord('\n'):
+                while c != ord('\n') and c != 27: # 27 => echap key
                     if c == curses.KEY_BACKSPACE:
                         pattern = pattern[:-1]
                     else:
@@ -193,7 +210,7 @@ def main(stdscr):
 
                 stdscr.deleteln()
 
-            if pattern != "":
+            if pattern != "" and c != 27:
                 items = []
                 search_engine = youtube_search(pattern)
                 for uid, name in next(search_engine):
