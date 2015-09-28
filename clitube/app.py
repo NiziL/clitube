@@ -212,11 +212,14 @@ def main(stdscr):
             with delay_on(stdscr):
                 c = stdscr.get_wch()
 
-                while c != '\n' and c != 27: # 27 => echap key
+                while c != '\n':
                     if c == curses.KEY_BACKSPACE:
                         pattern = pattern[:-1]
                     else:
-                        pattern += c
+                        try:
+                            pattern += c
+                        except:
+                            pass
                     stdscr.addstr(height-1, 8, pattern.encode('UTF-8'))
                     stdscr.clrtoeol()
 
@@ -224,8 +227,9 @@ def main(stdscr):
 
                 stdscr.deleteln()
 
-            if pattern != "" and c != 27:
+            if pattern != "":
                 items = []
+                selected = []
                 search_engine = youtube_search(pattern)
                 for uid, name in next(search_engine):
                     items.append(Item(uid, name))
