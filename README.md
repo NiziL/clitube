@@ -17,11 +17,12 @@ sudo make
 
 | Key   | Action | 
 |-------|--------|
+| q     | exit |
 | /     | search on YouTube |
+| n     | load more result |
 | j     | move down in the result list |
 | k     | move up in the result list |
 | G     | go at the last result |
 | gg    | go at the first result |
-| l     | add a song in the playlist |
-| n     | load more result |
-| q     | exit |
+| SPACE | select the current result |
+| ENTER | add selected results into the playlist. If no results are selected, add result at current postion |
