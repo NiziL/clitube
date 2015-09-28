@@ -3,16 +3,17 @@
 import requests
 import html
 import re
-import youtube_dl
 import os
 import subprocess
 import curses
+import itertools
 
 FNULL = open(os.devnull, 'wb')
 
 PATTERN_ID = re.compile("(?<=data-context-item-id=\")[\w-]{11}(?=\")")
 PATTERN_NAME = re.compile("(?<=dir=\"ltr\">).*(?=</a><span)")
-URL_SEARCH = "https://www.youtube.com/results?filters=video&search_query={}"
+URL_SEARCH = "https://www.youtube.com/results?" \
+             "filters=video&search_query={}&page={}"
 URL_VIDEO = "https://www.youtube.com/watch?v={}"
 
 PIPE_STREAM = "/tmp/clitube-stream"
@@ -33,12 +34,13 @@ class Item(object):
 
 
 def youtube_search(search):
-    r = requests.get(URL_SEARCH.format(search))
-    if r.status_code == 200:
-        return zip(re.findall(PATTERN_ID, r.text),
-                   map(html.unescape, re.findall(PATTERN_NAME, r.text)))
-    else:
-        raise Exception("YouTube is broken :(")
+    for page in itertools.count(start=1, step=1): 
+        r = requests.get(URL_SEARCH.format(search, page))
+        if r.status_code == 200:
+            yield zip(re.findall(PATTERN_ID, r.text),
+                      map(html.unescape, re.findall(PATTERN_NAME, r.text)))
+        else:
+            raise Exception("YouTube is broken :(")
 
 
 def init():
@@ -74,12 +76,14 @@ def main(stdscr):
 
     items = []
     position = 0
+    print_min = 0
+
     selected = []
 
     toplay = []
+    search = {}
 
-    height, width = stdscr.getmaxyx()
-    redraw = True
+    height, width = None, None
 
     while True:
         # renderer
@@ -92,15 +96,21 @@ def main(stdscr):
 
             stdscr.clear()
             stdscr.addstr(0, int(width/2)-4, u"CLItube", curses.color_pair(1))
-            for i, item in enumerate(items):
+
+            if position < print_min:
+                print_min = position
+            elif position - print_min > height-2:
+                print_min = abs(height - 2 - position)
+
+            for i, item in enumerate(items[print_min:print_min+height-1]):
                 style = 0
-                if i == position and i in selected:
+                if i + print_min == position and i + print_min in selected:
                     style = curses.A_REVERSE | curses.color_pair(2)
-                elif i == position:
+                elif i + print_min == position:
                     style = curses.A_REVERSE
-                elif i in selected:
+                elif i + print_min in selected:
                     style = curses.color_pair(2)
-                stdscr.addstr(i+2, 0, item.name, style)
+                stdscr.addstr(i+1, 0, item.name, style)
                 stdscr.clrtoeol()
             stdscr.refresh()
             redraw = False
@@ -126,41 +136,46 @@ def main(stdscr):
             if len(items) > 0:
                 position += 1
                 position %= len(items)
+            redraw = True
 
         elif c == ord('J') or c == curses.KEY_NPAGE:
             if len(items) > 0:
                 position = len(items)-1
+            redraw = True
 
         elif c == ord('k') or c == curses.KEY_UP:
             if len(items) > 0:
                 position -= 1
                 position %= len(items)
+            redraw = True
 
         elif c == ord('K') or c == curses.KEY_PPAGE:
             position = 0
+            redraw = True
 
         elif c == ord(' '):
             if position in selected:
                 selected.remove(position)
             else:
                 selected.append(position)
+            redraw = True
 
         elif c == ord('l'):
             toplay.append(items[position])
 
         elif c == ord('/'):
             stdscr.addstr(height-1, 0, u"search: ")
-            search = ""
+            pattern = ""
 
             stdscr.nodelay(False)
             c = stdscr.getch()
 
             while c != ord('\n'):
                 if c == curses.KEY_BACKSPACE:
-                    search = search[:-1]
+                    pattern = pattern[:-1]
                 else:
-                    search += chr(c)
-                stdscr.addstr(height-1, 8, search)
+                    pattern += chr(c)
+                stdscr.addstr(height-1, 8, pattern)
                 stdscr.clrtoeol()
 
                 c = stdscr.getch()
@@ -168,11 +183,19 @@ def main(stdscr):
             stdscr.deleteln()
             stdscr.nodelay(True)
 
-            if search != "":
+            if pattern != "":
                 items = []
-                for uid, name in youtube_search(search):
+                search_engine = youtube_search(pattern)
+                for uid, name in next(search_engine):
                     items.append(Item(uid, name))
                 redraw = True
+
+        elif c == ord('n'):
+            if not search_engine is None:
+                for uid, name in next(search_engine):
+                    items.append(Item(uid, name))
+                redraw = True
+
 
     if not player is None:
         player.kill()
