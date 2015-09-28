@@ -7,6 +7,7 @@ import os
 import subprocess
 import curses
 import itertools
+import contextlib
 
 FNULL = open(os.devnull, 'wb')
 
@@ -41,6 +42,13 @@ def youtube_search(search):
                       map(html.unescape, re.findall(PATTERN_NAME, r.text)))
         else:
             raise Exception("YouTube is broken :(")
+
+
+@contextlib.contextmanager
+def delay_on(scr):
+    scr.nodelay(False)
+    yield
+    scr.nodelay(True)
 
 
 def init():
@@ -81,7 +89,7 @@ def main(stdscr):
     selected = []
 
     toplay = []
-    search = {}
+    search_engine = None
 
     height, width = None, None
 
@@ -132,26 +140,29 @@ def main(stdscr):
         if c == ord('q'):
             break
 
-        elif c == ord('j') or c == curses.KEY_DOWN:
+        elif c == ord('j'):
             if len(items) > 0:
                 position += 1
                 position %= len(items)
             redraw = True
 
-        elif c == ord('J') or c == curses.KEY_NPAGE:
+        elif c == ord('G'):
             if len(items) > 0:
                 position = len(items)-1
             redraw = True
 
-        elif c == ord('k') or c == curses.KEY_UP:
+        elif c == ord('k'):
             if len(items) > 0:
                 position -= 1
                 position %= len(items)
             redraw = True
 
-        elif c == ord('K') or c == curses.KEY_PPAGE:
-            position = 0
-            redraw = True
+        elif c == ord('g'):
+            with delay_on(stdscr):
+                c = stdscr.getch()
+                if c == ord('g'):
+                    position = 0
+                    redraw = True
 
         elif c == ord(' '):
             if position in selected:
@@ -167,21 +178,20 @@ def main(stdscr):
             stdscr.addstr(height-1, 0, u"search: ")
             pattern = ""
 
-            stdscr.nodelay(False)
-            c = stdscr.getch()
-
-            while c != ord('\n'):
-                if c == curses.KEY_BACKSPACE:
-                    pattern = pattern[:-1]
-                else:
-                    pattern += chr(c)
-                stdscr.addstr(height-1, 8, pattern)
-                stdscr.clrtoeol()
-
+            with delay_on(stdscr):
                 c = stdscr.getch()
 
-            stdscr.deleteln()
-            stdscr.nodelay(True)
+                while c != ord('\n'):
+                    if c == curses.KEY_BACKSPACE:
+                        pattern = pattern[:-1]
+                    else:
+                        pattern += chr(c)
+                    stdscr.addstr(height-1, 8, pattern)
+                    stdscr.clrtoeol()
+
+                    c = stdscr.getch()
+
+                stdscr.deleteln()
 
             if pattern != "":
                 items = []
