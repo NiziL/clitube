@@ -157,43 +157,46 @@ def main(stdscr):
             redraw = False
 
         # controller
-        c = stdscr.getch()
+        try:
+            c = stdscr.get_wch()
+        except:
+            c = -1
 
-        if c == ord('q'):
+        if c == 'q':
             break
 
-        elif c == ord('j'):
+        elif c == 'j':
             if len(items) > 0:
                 position += 1
                 position %= len(items)
             redraw = True
 
-        elif c == ord('G'):
+        elif c == 'G':
             if len(items) > 0:
                 position = len(items)-1
             redraw = True
 
-        elif c == ord('k'):
+        elif c == 'k':
             if len(items) > 0:
                 position -= 1
                 position %= len(items)
             redraw = True
 
-        elif c == ord('g'):
+        elif c == 'g':
             with delay_on(stdscr):
-                c = stdscr.getch()
-                if c == ord('g'):
+                c = stdscr.get_wch()
+                if c == 'g':
                     position = 0
                     redraw = True
 
-        elif c == ord(' '):
+        elif c == ' ':
             if position in selected:
                 selected.remove(position)
             else:
                 selected.append(position)
             redraw = True
 
-        elif c == ord('\n'):
+        elif c == '\n':
             if len(selected) == 0:
                 toplay.append(items[position])
             else:
@@ -202,22 +205,22 @@ def main(stdscr):
                 selected = []
             redraw = True
 
-        elif c == ord('/'):
+        elif c == '/':
             stdscr.addstr(height-1, 0, u"search: ")
             pattern = ""
 
             with delay_on(stdscr):
-                c = stdscr.getch()
+                c = stdscr.get_wch()
 
-                while c != ord('\n') and c != 27: # 27 => echap key
+                while c != '\n' and c != 27: # 27 => echap key
                     if c == curses.KEY_BACKSPACE:
                         pattern = pattern[:-1]
                     else:
-                        pattern += chr(c)
-                    stdscr.addstr(height-1, 8, pattern)
+                        pattern += c
+                    stdscr.addstr(height-1, 8, pattern.encode('UTF-8'))
                     stdscr.clrtoeol()
 
-                    c = stdscr.getch()
+                    c = stdscr.get_wch()
 
                 stdscr.deleteln()
 
@@ -228,7 +231,7 @@ def main(stdscr):
                     items.append(Item(uid, name))
                 redraw = True
 
-        elif c == ord('n'):
+        elif c == 'n':
             if not search_engine is None:
                 for uid, name in next(search_engine):
                     items.append(Item(uid, name))
