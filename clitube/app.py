@@ -7,7 +7,7 @@ import os
 import subprocess
 import curses
 import itertools
-import contextlib
+from contextlib import contextmanager
 
 FNULL = open(os.devnull, 'wb')
 
@@ -44,7 +44,7 @@ def youtube_search(search):
             raise Exception("YouTube is broken :(")
 
 
-@contextlib.contextmanager
+@contextmanager
 def delay_on(scr):
     scr.nodelay(False)
     yield
