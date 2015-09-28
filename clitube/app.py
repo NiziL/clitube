@@ -153,7 +153,7 @@ def main(stdscr):
         # controller
         c = stdscr.getch()
 
-        if c == ord('q') or c == 27:
+        if c == ord('q'):
             break
 
         elif c == ord('j'):
