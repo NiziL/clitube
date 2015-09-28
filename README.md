@@ -24,5 +24,5 @@ sudo make
 | k     | move up in the result list |
 | G     | go at the last result |
 | gg    | go at the first result |
-| SPACE | select the current result |
-| ENTER | add selected results into the playlist. If no results are selected, add result at current postion |
+| SPACE | select/unselect result at current position |
+| ENTER | add selected results into the playlist. If no results are selected, add result at current position |
