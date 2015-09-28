@@ -7,11 +7,11 @@ WORK IN PROGRESS, USE AT YOUR OWN RISK
 
 ### Installation
 
-----------------------------------------------
+```bash
 git clone https://github.com/NiZiL/clitube.git
 cd clitube
 sudo make
-----------------------------------------------
+```
 
 ### Key-bindings
 
