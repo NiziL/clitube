@@ -119,10 +119,10 @@ def main(stdscr):
 
             if position < print_min:
                 print_min = position
-            elif position - print_min > height-2:
-                print_min = abs(height - 2 - position)
+            elif position - print_min > height-3:
+                print_min = abs(height - 3 - position)
 
-            for i, item in enumerate(items[print_min:print_min+height-1]):
+            for i, item in enumerate(items[print_min:print_min+height-2]):
                 style = 0
                 if i + print_min == position and i + print_min in selected:
                     style = curses.A_REVERSE | curses.color_pair(2)
@@ -139,21 +139,27 @@ def main(stdscr):
                 stdscr.addstr(i+1, 0, display, style)
                 stdscr.clrtoeol()
 
-            for i, item in enumerate(toplay[:height-1]):
+
+            playlist_scr = stdscr.subwin(height-2, int(width/2),
+                                         1, int(width/2))
+            for i, item in enumerate(toplay[:height-3]):
                 if len(item.name) > int(width/2)-2:
                     display = item.name[:int(width/2)-2]
                 else:
                     display = item.name + u' '*(int(width/2)-2 - len(item.name))
-                stdscr.addstr(i+1, int(width/2)+1, display)
-                stdscr.clrtoeol()
-                
+                playlist_scr.addstr(i+1, 1, display)
+                playlist_scr.clrtoeol()
+            playlist_scr.box()
+            playlist_scr.addstr(0, int(width/4)-5, " Playlist ")
+
+            playlist_scr.refresh()    
             stdscr.refresh()
             redraw = False
 
         # controller
         c = stdscr.getch()
 
-        if c == ord('q') or c == 27:
+        if c == ord('q'):
             break
 
         elif c == ord('j'):
@@ -187,8 +193,13 @@ def main(stdscr):
                 selected.append(position)
             redraw = True
 
-        elif c == ord('l'):
-            toplay.append(items[position])
+        elif c == ord('\n'):
+            if len(selected) == 0:
+                toplay.append(items[position])
+            else:
+                for i in selected:
+                    toplay.append(items[i])
+                selected = []
             redraw = True
 
         elif c == ord('/'):
