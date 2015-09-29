@@ -81,6 +81,7 @@ def main(stdscr):
     selected = []
 
     toplay = []
+    play_index = 0
     search_engine = None
     dl = player = None
 
@@ -89,15 +90,15 @@ def main(stdscr):
 
     while True:
         # sound "engine", hum...
-        if len(toplay) > 0:
+        if len(toplay) > play_index:
             if player is None:
-                dl, player = play(toplay[0].uid)
+                dl, player = play(toplay[play_index].uid)
             else:
                 player.poll()
                 dl.poll()
                 if not player.returncode is None:
                     player = None
-                    toplay.pop(0)
+                    play_index += 1
                     redraw = True
 
         # renderer
@@ -138,11 +139,15 @@ def main(stdscr):
             playlist_scr = stdscr.subwin(height-2, int(width/2),
                                          1, int(width/2))
             for i, item in enumerate(toplay[:height-3]):
+                style = 0
+                if i == play_index:
+                    style = curses.A_REVERSE
+
                 if len(item.name) > int(width/2)-2:
                     display = item.name[:int(width/2)-2]
                 else:
                     display = item.name + u' '*(int(width/2)-2 - len(item.name))
-                playlist_scr.addstr(i+1, 1, display)
+                playlist_scr.addstr(i+1, 1, display, style)
                 playlist_scr.clrtoeol()
             playlist_scr.box()
             playlist_scr.addstr(0, int(width/4)-5, " Playlist ")
@@ -165,6 +170,36 @@ def main(stdscr):
             if c == '\n':
                 if cmd == 'q' or cmd == 'quit':
                     break
+                elif cmd == 'n' or cmd == 'next':
+                    if play_index < len(toplay) -1:
+                        play_index += 1
+                        if not player is None:
+                            try:
+                                dl.kill()
+                            except ProcessLookupError:
+                                pass
+                            try:
+                                player.kill()
+                            except ProcessLookupError:
+                                pass
+                            player = None
+                        redraw = True
+                    
+                elif cmd == 'p' or cmd == 'previous':
+                    if play_index > 0:
+                        play_index -= 1
+                        if not player is None:
+                            try:
+                                dl.kill()
+                            except ProcessLookupError:
+                                pass
+                            try:
+                                player.kill()
+                            except ProcessLookupError:
+                                pass
+                            player = None
+                        redraw = True
+
                 elif cmd.startswith('search '):
                     try:
                         pattern = cmd[cmd.index(' ')+1:]
@@ -253,4 +288,8 @@ def main(stdscr):
 
 
 def start():
+    try:
+        os.environ['ESCDELAY']
+    except KeyError:
+        os.environ['ESCDELAY'] = '25'
     curses.wrapper(main)

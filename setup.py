@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name="clitube",
-    version="0.1.1",
+    version="0.1.2",
     author="NiZiL",
     description=("Browse and listen Youtube's video from your terminal"),
 
