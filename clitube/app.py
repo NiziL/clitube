@@ -174,8 +174,14 @@ def main(stdscr):
                     if play_index < len(toplay) -1:
                         play_index += 1
                         if not player is None:
-                            dl.kill()
-                            player.kill()
+                            try:
+                                dl.kill()
+                            except ProcessLookupError:
+                                pass
+                            try:
+                                player.kill()
+                            except ProcessLookupError:
+                                pass
                             player = None
                         redraw = True
                     
@@ -183,8 +189,14 @@ def main(stdscr):
                     if play_index > 0:
                         play_index -= 1
                         if not player is None:
-                            dl.kill()
-                            player.kill()
+                            try:
+                                dl.kill()
+                            except ProcessLookupError:
+                                pass
+                            try:
+                                player.kill()
+                            except ProcessLookupError:
+                                pass
                             player = None
                         redraw = True
 
