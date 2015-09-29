@@ -46,7 +46,7 @@ def youtube_search(search):
 def init():
     try:
         os.mkfifo(PIPE_STREAM)
-    except:
+    except OSError:
         pass
 
 
@@ -211,7 +211,7 @@ def main(stdscr):
                 elif cmd.startswith('search '):
                     try:
                         pattern = cmd[cmd.index(' ')+1:]
-                    except:
+                    except ValueError:
                         pattern = ''
                     if pattern != '':
                         items = []
@@ -233,9 +233,9 @@ def main(stdscr):
             elif c != -1:
                 try:
                     cmd += c
-                except:
+                    redraw = True
+                except TypeError:
                     pass
-                redraw = True
 
         elif c == 'j':
             if len(items) > 0:
