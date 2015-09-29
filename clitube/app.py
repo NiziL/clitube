@@ -80,8 +80,10 @@ def main(stdscr):
 
     selected = []
 
-    toplay = []
+    playlist = []
     play_index = 0
+    pl_print_min = 0
+
     search_engine = None
     dl = player = None
 
@@ -90,9 +92,9 @@ def main(stdscr):
 
     while True:
         # sound "engine", hum...
-        if len(toplay) > play_index:
+        if len(playlist) > play_index:
             if player is None:
-                dl, player = play(toplay[play_index].uid)
+                dl, player = play(playlist[play_index].uid)
             else:
                 player.poll()
                 dl.poll()
@@ -138,9 +140,15 @@ def main(stdscr):
 
             playlist_scr = stdscr.subwin(height-2, int(width/2),
                                          1, int(width/2))
-            for i, item in enumerate(toplay[:height-3]):
+            if play_index-1 < pl_print_min:
+                pl_print_min = max(0, play_index-1)
+            elif play_index - pl_print_min > height-6:
+                pl_print_min = abs(height - 5 - play_index)+1
+            pl_print_max = pl_print_min+height-3
+
+            for i, item in enumerate(playlist[pl_print_min:pl_print_max]):
                 style = 0
-                if i == play_index:
+                if i + pl_print_min == play_index:
                     style = curses.A_REVERSE
 
                 if len(item.name) > int(width/2)-2:
@@ -171,7 +179,7 @@ def main(stdscr):
                 if cmd == 'q' or cmd == 'quit':
                     break
                 elif cmd == 'n' or cmd == 'next':
-                    if play_index < len(toplay) -1:
+                    if play_index < len(playlist) -1:
                         play_index += 1
                         if not player is None:
                             try:
@@ -259,10 +267,10 @@ def main(stdscr):
 
         elif c == '\n':
             if len(selected) == 0:
-                toplay.append(items[position])
+                playlist.append(items[position])
             else:
                 for i in selected:
-                    toplay.append(items[i])
+                    playlist.append(items[i])
                 selected = []
             redraw = True
 
