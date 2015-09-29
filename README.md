@@ -34,4 +34,6 @@ sudo make install
 |---------|--------|
 | search  | search on Youtube |
 | quit (q)| quit |
+| next (n)| next soundtrack on the playlist |
+| previous (p) | previous soundtrack on the playlist |
 

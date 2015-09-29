@@ -170,6 +170,24 @@ def main(stdscr):
             if c == '\n':
                 if cmd == 'q' or cmd == 'quit':
                     break
+                elif cmd == 'n' or cmd == 'next':
+                    if play_index < len(toplay) -1:
+                        play_index += 1
+                        if not player is None:
+                            dl.kill()
+                            player.kill()
+                            player = None
+                        redraw = True
+                    
+                elif cmd == 'p' or cmd == 'previous':
+                    if play_index > 0:
+                        play_index -= 1
+                        if not player is None:
+                            dl.kill()
+                            player.kill()
+                            player = None
+                        redraw = True
+
                 elif cmd.startswith('search '):
                     try:
                         pattern = cmd[cmd.index(' ')+1:]
