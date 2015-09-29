@@ -7,7 +7,6 @@ import os
 import subprocess
 import curses
 import itertools
-from contextlib import contextmanager
 
 FNULL = open(os.devnull, 'wb')
 
@@ -44,13 +43,6 @@ def youtube_search(search):
             raise Exception("YouTube is broken :(")
 
 
-@contextmanager
-def delay_on(scr):
-    scr.nodelay(False)
-    yield
-    scr.nodelay(True)
-
-
 def init():
     try:
         os.mkfifo(PIPE_STREAM)
@@ -72,15 +64,15 @@ def play(uid):
 
 
 def main(stdscr):
-    # initialization, tmp directory, youtube-dl api
     init()
-    dl = player = None
 
     curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
     curses.init_pair(2, curses.COLOR_YELLOW, curses.COLOR_BLACK)
 
     curses.curs_set(False)
     stdscr.nodelay(True)
+
+    height, width = None, None
 
     items = []
     position = 0
@@ -90,8 +82,10 @@ def main(stdscr):
 
     toplay = []
     search_engine = None
+    dl = player = None
 
-    height, width = None, None
+    cmdMode = False
+    cmd = ""
 
     while True:
         # sound "engine", hum...
@@ -115,7 +109,8 @@ def main(stdscr):
             height, width = stdscr.getmaxyx()
 
             stdscr.clear()
-            stdscr.addstr(0, int(width/2)-4, u"CLItube", curses.color_pair(1))
+            stdscr.addstr(0, int(width/2)-4, u"CLItube",
+                          curses.color_pair(1) | curses.A_BOLD)
 
             if position < print_min:
                 print_min = position
@@ -152,6 +147,10 @@ def main(stdscr):
             playlist_scr.box()
             playlist_scr.addstr(0, int(width/4)-5, " Playlist ")
 
+            if cmdMode:
+                stdscr.addstr(height-1, 0, u':'+cmd)
+                stdscr.clrtoeol()
+
             playlist_scr.refresh()    
             stdscr.refresh()
             redraw = False
@@ -162,8 +161,38 @@ def main(stdscr):
         except:
             c = -1
 
-        if c == 'q':
-            break
+        if cmdMode:
+            if c == '\n':
+                if cmd == 'q' or cmd == 'quit':
+                    break
+                elif cmd.startswith('search '):
+                    try:
+                        pattern = cmd[cmd.index(' ')+1:]
+                    except:
+                        pattern = ''
+                    if pattern != '':
+                        items = []
+                        selected = []
+                        search_engine = youtube_search(pattern)
+                        for uid, name in next(search_engine):
+                            items.append(Item(uid, name))
+                        redraw = True
+                cmd = ""
+                cmdMode = False
+                stdscr.deleteln()
+            elif type(c) == str and ord(c) == 27: # echap key
+                cmd = ""
+                cmdMode = False
+                stdscr.deleteln()
+            elif c == curses.KEY_BACKSPACE:
+                cmd = cmd[:-1]
+                redraw = True
+            elif c != -1:
+                try:
+                    cmd += c
+                except:
+                    pass
+                redraw = True
 
         elif c == 'j':
             if len(items) > 0:
@@ -183,11 +212,8 @@ def main(stdscr):
             redraw = True
 
         elif c == 'g':
-            with delay_on(stdscr):
-                c = stdscr.get_wch()
-                if c == 'g':
-                    position = 0
-                    redraw = True
+            position = 0
+            redraw = True
 
         elif c == ' ':
             if position in selected:
@@ -206,34 +232,14 @@ def main(stdscr):
             redraw = True
 
         elif c == '/':
-            stdscr.addstr(height-1, 0, u"search: ")
-            pattern = ""
+            cmd = "search "
+            cmdMode = True
+            stdscr.addstr(height-1, 0, u':'+cmd)
 
-            with delay_on(stdscr):
-                c = stdscr.get_wch()
-
-                while c != '\n':
-                    if c == curses.KEY_BACKSPACE:
-                        pattern = pattern[:-1]
-                    else:
-                        try:
-                            pattern += c
-                        except:
-                            pass
-                    stdscr.addstr(height-1, 8, pattern.encode('UTF-8'))
-                    stdscr.clrtoeol()
-
-                    c = stdscr.get_wch()
-
-                stdscr.deleteln()
-
-            if pattern != "":
-                items = []
-                selected = []
-                search_engine = youtube_search(pattern)
-                for uid, name in next(search_engine):
-                    items.append(Item(uid, name))
-                redraw = True
+        elif c == ':':
+            cmd = ""
+            cmdMode = True
+            stdscr.addstr(height-1, 0, u':'+cmd)
 
         elif c == 'n':
             if not search_engine is None:
