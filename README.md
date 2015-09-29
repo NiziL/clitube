@@ -10,19 +10,28 @@ WORK IN PROGRESS, USE AT YOUR OWN RISK
 ```bash
 git clone https://github.com/NiZiL/clitube.git
 cd clitube
-sudo make
+sudo make install
 ```
 
 ### Key-bindings
 
 | Key   | Action | 
 |-------|--------|
-| q     | exit |
-| /     | search on YouTube |
+| :     | enter a command |
+| /     | shortcut for the search command |
 | n     | load more result |
 | j     | move down in the result list |
 | k     | move up in the result list |
 | G     | go at the last result |
-| gg    | go at the first result |
-| SPACE | select the current result |
-| ENTER | add selected results into the playlist. If no results are selected, add result at current postion |
+| g     | go at the first result |
+| SPACE | select/unselect result at current position |
+| ENTER | add selected results into the playlist. If no results are selected, add result at current position |
+
+
+### Commands
+
+| Command | Effect |
+|---------|--------|
+| search  | search on Youtube |
+| quit (q)| quit |
+
