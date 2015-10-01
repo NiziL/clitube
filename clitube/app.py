@@ -34,7 +34,7 @@ class Item(object):
 
 
 def youtube_search(search):
-    for page in itertools.count(start=1, step=1): 
+    for page in itertools.count(start=1, step=1):
         r = requests.get(URL_SEARCH.format(search, page))
         if r.status_code == 200:
             yield zip(re.findall(PATTERN_ID, r.text),
@@ -46,7 +46,7 @@ def youtube_search(search):
 def init():
     try:
         os.mkfifo(PIPE_STREAM)
-    except:
+    except OSError:
         pass
 
 
@@ -61,6 +61,17 @@ def play(uid):
                               stdout=FNULL, stderr=FNULL)
 
     return dl, player
+
+
+class Renderer(object):
+    def __init__(self, stdscr):
+        self._stdscr = stdscr
+
+    def render_search(self, items):
+        pass
+
+    def render_cmd(self, cmd):
+        pass
 
 
 def main(stdscr):
@@ -101,26 +112,34 @@ def main(stdscr):
                 if not player.returncode is None:
                     player = None
                     play_index += 1
-                    redraw = True
+                    redraw_playlist = True
 
         # renderer
-        # ugly piece of code here
         if (height, width) != stdscr.getmaxyx():
-            redraw = True
+            redraw_title = True
+            redraw_search = True
+            redraw_playlist = True
+            redraw_cmd = True
 
-        if redraw:
+        if redraw_title:
             height, width = stdscr.getmaxyx()
 
             stdscr.clear()
             stdscr.addstr(0, int(width/2)-4, u"CLItube",
                           curses.color_pair(1) | curses.A_BOLD)
 
+            redraw_title = False
+
+        if redraw_search:
+            search_scr = stdscr.subwin(height-2, int(width/2), 1, 0)
+            search_scr.clear()
+
             if position < print_min:
                 print_min = position
-            elif position - print_min > height-3:
-                print_min = abs(height - 3 - position)
+            elif position - print_min > height-5:
+                print_min = abs(height - 5 - position)
 
-            for i, item in enumerate(items[print_min:print_min+height-2]):
+            for i, item in enumerate(items[print_min:print_min+height-4]):
                 style = 0
                 if i + print_min == position and i + print_min in selected:
                     style = curses.A_REVERSE | curses.color_pair(2)
@@ -130,16 +149,19 @@ def main(stdscr):
                     style = curses.color_pair(2)
 
                 if len(item.name) > int(width/2):
-                    display = item.name[:int(width/2)]
+                    display = item.name[:int(width/2)-3]
                 else:
-                    display = item.name + u' '*(int(width/2) - len(item.name))
+                    display = item.name + u' '*(int(width/2)-len(item.name)-1)
 
-                stdscr.addstr(i+1, 0, display, style)
-                stdscr.clrtoeol()
+                search_scr.addstr(i+1, 1, display, style)
+            search_scr.box()
 
+            redraw_search = False
 
+        if redraw_playlist:
             playlist_scr = stdscr.subwin(height-2, int(width/2),
                                          1, int(width/2))
+            playlist_scr.clear()
             if play_index-1 < pl_print_min:
                 pl_print_min = max(0, play_index-1)
             elif play_index - pl_print_min > height-6:
@@ -154,19 +176,23 @@ def main(stdscr):
                 if len(item.name) > int(width/2)-2:
                     display = item.name[:int(width/2)-2]
                 else:
-                    display = item.name + u' '*(int(width/2)-2 - len(item.name))
+                    display = item.name + u' '*(int(width/2)-2-len(item.name))
                 playlist_scr.addstr(i+1, 1, display, style)
-                playlist_scr.clrtoeol()
             playlist_scr.box()
-            playlist_scr.addstr(0, int(width/4)-5, " Playlist ")
+            playlist_scr.addstr(0, int(width/4)-5, " Playlist ", curses.A_BOLD)
 
-            if cmdMode:
-                stdscr.addstr(height-1, 0, u':'+cmd)
-                stdscr.clrtoeol()
+            redraw_playlist = False
 
-            playlist_scr.refresh()    
-            stdscr.refresh()
-            redraw = False
+        if redraw_cmd:
+            stdscr.addstr(height-1, 0, cmd)
+            stdscr.clrtoeol()
+
+            redraw_cmd = False
+
+            # using doupdate instead of refresh seems to reduce flickering
+            # (doesn't work with addch)
+            # but actually, clitube works without doupdate, must investigate
+            # curses.doupdate()
 
         # controller
         try:
@@ -176,10 +202,10 @@ def main(stdscr):
 
         if cmdMode:
             if c == '\n':
-                if cmd == 'q' or cmd == 'quit':
+                if cmd == ':q' or cmd == ':quit':
                     break
-                elif cmd == 'n' or cmd == 'next':
-                    if play_index < len(playlist) -1:
+                elif cmd == ':n' or cmd == ':next':
+                    if play_index < len(playlist)-1:
                         play_index += 1
                         if not player is None:
                             try:
@@ -191,9 +217,9 @@ def main(stdscr):
                             except ProcessLookupError:
                                 pass
                             player = None
-                        redraw = True
-                    
-                elif cmd == 'p' or cmd == 'previous':
+                        redraw_playlist = True
+
+                elif cmd == ':p' or cmd == ':previous':
                     if play_index > 0:
                         play_index -= 1
                         if not player is None:
@@ -206,64 +232,65 @@ def main(stdscr):
                             except ProcessLookupError:
                                 pass
                             player = None
-                        redraw = True
+                        redraw_playlist = True
 
-                elif cmd.startswith('search '):
+                elif cmd.startswith(':search '):
                     try:
                         pattern = cmd[cmd.index(' ')+1:]
-                    except:
+                    except ValueError:
                         pattern = ''
                     if pattern != '':
                         items = []
                         selected = []
+                        position = 0
                         search_engine = youtube_search(pattern)
                         for uid, name in next(search_engine):
                             items.append(Item(uid, name))
-                        redraw = True
+                        redraw_search = True
                 cmd = ""
                 cmdMode = False
                 stdscr.deleteln()
-            elif type(c) == str and ord(c) == 27: # echap key
+            elif type(c) == str and ord(c) == 27:  # echap key
                 cmd = ""
                 cmdMode = False
                 stdscr.deleteln()
             elif c == curses.KEY_BACKSPACE:
                 cmd = cmd[:-1]
-                redraw = True
+                redraw_cmd = True
             elif c != -1:
                 try:
                     cmd += c
-                except:
+                    redraw_cmd = True
+                except TypeError:
                     pass
-                redraw = True
 
         elif c == 'j':
             if len(items) > 0:
                 position += 1
                 position %= len(items)
-            redraw = True
+            redraw_search = True
 
         elif c == 'G':
             if len(items) > 0:
                 position = len(items)-1
-            redraw = True
+            redraw_search = True
 
         elif c == 'k':
             if len(items) > 0:
                 position -= 1
                 position %= len(items)
-            redraw = True
+            redraw_search = True
 
         elif c == 'g':
             position = 0
-            redraw = True
+            redraw_search = True
 
         elif c == ' ':
             if position in selected:
                 selected.remove(position)
             else:
                 selected.append(position)
-            redraw = True
+            redraw_search = True
 
         elif c == '\n':
             if len(selected) == 0:
@@ -272,24 +299,24 @@ def main(stdscr):
                 for i in selected:
                     playlist.append(items[i])
                 selected = []
-            redraw = True
+            redraw_search = True
+            redraw_playlist = True
 
         elif c == '/':
-            cmd = "search "
+            cmd = ":search "
             cmdMode = True
-            stdscr.addstr(height-1, 0, u':'+cmd)
+            redraw_cmd = True
 
         elif c == ':':
-            cmd = ""
+            cmd = ":"
             cmdMode = True
-            stdscr.addstr(height-1, 0, u':'+cmd)
+            redraw_cmd = True
 
         elif c == 'n':
             if not search_engine is None:
                 for uid, name in next(search_engine):
                     items.append(Item(uid, name))
-                redraw = True
-
+                redraw_search = True
 
     if not player is None:
         player.kill()

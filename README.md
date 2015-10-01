@@ -5,6 +5,8 @@ Powered by [mplayer](http://www.mplayerhq.hu/) and [youtube-dl](https://rg3.gith
 
 WORK IN PROGRESS, USE AT YOUR OWN RISK
 
+![screenshoot](https://raw.github.com/NiZiL/clitube/master/clitube.png)
+
 ### Installation
 
 ```bash
