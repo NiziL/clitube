@@ -36,7 +36,10 @@ WORK IN PROGRESS, USE AT YOUR OWN RISK
 | g     | go at the first result |
 | SPACE | select/unselect result at current position |
 | ENTER | add selected results into the playlist. If no results are selected, add result at current position |
-
+| p     | pause |
+| m     | mute/unmute |
+| +     | increase volume |
+| -     | decrease volume |
 
 ### Commands
 

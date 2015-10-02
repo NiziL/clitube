@@ -17,6 +17,7 @@ URL_SEARCH = "https://www.youtube.com/results?" \
 URL_VIDEO = "https://www.youtube.com/watch?v={}"
 
 PIPE_STREAM = "/tmp/clitube-stream"
+PIPE_CMD = "/tmp/clitube-cmd"
 
 
 class Item(object):
@@ -48,6 +49,10 @@ def init():
         os.mkfifo(PIPE_STREAM)
     except OSError:
         pass
+    try:
+        os.mkfifo(PIPE_CMD)
+    except OSError:
+        pass
 
 
 def play(uid):
@@ -57,7 +62,10 @@ def play(uid):
                            '-o', PIPE_STREAM],
                           stdout=FNULL, stderr=FNULL)
 
-    player = subprocess.Popen(['mplayer', '-vo', 'null', PIPE_STREAM],
+    player = subprocess.Popen(['mplayer',
+                               '-vo', 'null', '-slave',
+                               '-input', 'file=%s' % PIPE_CMD,
+                               PIPE_STREAM],
                               stdout=FNULL, stderr=FNULL)
 
     return dl, player
@@ -284,6 +292,26 @@ def main(stdscr):
             else:
                 selected.append(position)
             redraw_search = True
+
+        elif c == 'p':
+            if not player is None:
+                with open(PIPE_CMD, 'w') as control:
+                    control.write('pause\n')
+
+        elif c == 'm':
+            if not player is None:
+                with open(PIPE_CMD, 'w') as control:
+                    control.write('mute\n')
+
+        elif c == '+':
+            if not player is None:
+                with open(PIPE_CMD, 'w') as control:
+                    control.write('volume +1\n')
+
+        elif c == '-':
+            if not player is None:
+                with open(PIPE_CMD, 'w') as control:
+                    control.write('volume -1\n')
 
         elif c == '\n':
             if len(selected) == 0:
