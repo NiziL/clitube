@@ -14,7 +14,7 @@ setup(
 
     description=DESCRIPTION,
     keywords=['YouTube', 'CLI'],
-    classifier=[],
+    classifiers=[],
 
     packages=['clitube'],
     scripts=['scripts/clitube'],
