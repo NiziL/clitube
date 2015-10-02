@@ -5,21 +5,21 @@ Powered by [mplayer](http://www.mplayerhq.hu/) and [youtube-dl](https://rg3.gith
 
 WORK IN PROGRESS, USE AT YOUR OWN RISK
 
-![screenshoot](clitube.gif)
+![screenshoot](https://raw.githubusercontent.com/NiZiL/clitube/master/clitube.gif)
 
 ### Installation
 
 ##### Using pip
 
 ```bash
-# pip install clitube
+# pip3 install clitube
 ```
 
 ##### Manual
 
 ```bash
 % git clone https://github.com/NiZiL/clitube.git
-% clitube
+% cd clitube
 # make install
 ```
 
