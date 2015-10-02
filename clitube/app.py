@@ -254,7 +254,7 @@ def main(stdscr):
                 cmd = ""
                 cmdMode = False
                 stdscr.deleteln()
-            elif c == curses.KEY_BACKSPACE:
+            elif c == curses.KEY_BACKSPACE and len(cmd) > 1:
                 cmd = cmd[:-1]
                 redraw_cmd = True
             elif c != -1:
