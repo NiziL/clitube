@@ -63,15 +63,18 @@ def play(uid):
     return dl, player
 
 
-class Renderer(object):
-    def __init__(self, stdscr):
-        self._stdscr = stdscr
-
-    def render_search(self, items):
-        pass
-
-    def render_cmd(self, cmd):
-        pass
+def stop(dl, player):
+    if not player is None:
+        try:
+            player.kill()
+        except ProcessLookupError:
+            pass
+    if not dl is None:
+        try:
+            dl.kill()
+        except ProcessLookupError:
+            pass
+    return None, None
 
 
 def main(stdscr):
@@ -116,14 +119,13 @@ def main(stdscr):
 
         # renderer
         if (height, width) != stdscr.getmaxyx():
+            height, width = stdscr.getmaxyx()
             redraw_title = True
             redraw_search = True
             redraw_playlist = True
             redraw_cmd = True
 
         if redraw_title:
-            height, width = stdscr.getmaxyx()
-
             stdscr.clear()
             stdscr.addstr(0, int(width/2)-4, u"CLItube",
                           curses.color_pair(1) | curses.A_BOLD)
@@ -207,31 +209,13 @@ def main(stdscr):
                 elif cmd == ':n' or cmd == ':next':
                     if play_index < len(playlist)-1:
                         play_index += 1
-                        if not player is None:
-                            try:
-                                dl.kill()
-                            except ProcessLookupError:
-                                pass
-                            try:
-                                player.kill()
-                            except ProcessLookupError:
-                                pass
-                            player = None
+                        dl, player = stop(dl, player)
                         redraw_playlist = True
 
                 elif cmd == ':p' or cmd == ':previous':
                     if play_index > 0:
                         play_index -= 1
-                        if not player is None:
-                            try:
-                                dl.kill()
-                            except ProcessLookupError:
-                                pass
-                            try:
-                                player.kill()
-                            except ProcessLookupError:
-                                pass
-                            player = None
+                        dl, player = stop(dl, player)
                         redraw_playlist = True
 
                 elif cmd.startswith(':search '):
@@ -247,6 +231,7 @@ def main(stdscr):
                         for uid, name in next(search_engine):
                             items.append(Item(uid, name))
                         redraw_search = True
+
                 cmd = ""
                 cmdMode = False
                 stdscr.deleteln()
@@ -318,8 +303,7 @@ def main(stdscr):
                     items.append(Item(uid, name))
                 redraw_search = True
 
-    if not player is None:
-        player.kill()
+    stop(dl, player)
 
 
 def start():
