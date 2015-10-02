@@ -9,10 +9,18 @@ WORK IN PROGRESS, USE AT YOUR OWN RISK
 
 ### Installation
 
+##### Using pip
+
 ```bash
-git clone https://github.com/NiZiL/clitube.git
-cd clitube
-sudo make install
+# pip install clitube
+```
+
+##### Manual
+
+```bash
+% git clone https://github.com/NiZiL/clitube.git
+% clitube
+# make install
 ```
 
 ### Key-bindings
@@ -38,4 +46,5 @@ sudo make install
 | quit (q)| quit |
 | next (n)| next soundtrack on the playlist |
 | previous (p) | previous soundtrack on the playlist |
+| clear (clr) | clear the playlist |
 

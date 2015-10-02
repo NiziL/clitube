@@ -193,7 +193,8 @@ def main(stdscr):
 
             # using doupdate instead of refresh seems to reduce flickering
             # (doesn't work with addch)
-            # but actually, clitube works without doupdate, must investigate
+            # but actually, clitube works without neither doupdate nor refresh
+            # must investigate
             # curses.doupdate()
 
         # controller
@@ -206,6 +207,7 @@ def main(stdscr):
             if c == '\n':
                 if cmd == ':q' or cmd == ':quit':
                     break
+
                 elif cmd == ':n' or cmd == ':next':
                     if play_index < len(playlist)-1:
                         play_index += 1
@@ -217,6 +219,12 @@ def main(stdscr):
                         play_index -= 1
                         dl, player = stop(dl, player)
                         redraw_playlist = True
+
+                elif cmd == ':clr' or cmd == ':clear':
+                    dl, player = stop(dl, player)
+                    play_index = 0
+                    playlist = []
+                    redraw_playlist = True
 
                 elif cmd.startswith(':search '):
                     try:
