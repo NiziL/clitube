@@ -1,11 +1,20 @@
 from setuptools import setup
 
 
+VERSION = "0.1.3"
+DESCRIPTION = "Browse and listen Youtube video soundtrack from your terminal"
+
 setup(
     name="clitube",
-    version="0.1.3",
+    version=VERSION,
     author="NiZiL",
-    description=("Browse and listen Youtube's video from your terminal"),
+
+    url="https://github.com/NiZiL/clitube",
+    download_url="https://github.com/NiZiL/clitube/tarball/"+VERSION,
+
+    description=DESCRIPTION,
+    keywords=['YouTube', 'CLI'],
+    classifier=[],
 
     packages=['clitube'],
     scripts=['scripts/clitube'],
