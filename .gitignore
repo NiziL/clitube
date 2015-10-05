@@ -1,5 +1,6 @@
 .*.swp
 .*.swo
+__pycache__
 build
 clitube.egg-info
 dist
