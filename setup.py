@@ -3,7 +3,7 @@
 from setuptools import setup
 
 
-VERSION = '0.2.0'
+VERSION = '0.2.1'
 DESCRIPTION = 'Browse and listen Youtube video soundtrack from your terminal'
 
 setup(
