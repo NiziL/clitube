@@ -8,9 +8,9 @@ install:
 - pip install --user .
 script:
 - make test
+before_deploy: "pip install --user twine"
 deploy:
   provider: pypi
-  edge: true
   user: NiZiL
   password:
     secure: jaPxYfBk7CXZoK4ZczWmPDaIIKb05ZFck/i0QF6t6VwE4XR5QJvv47nfo4ubgUxrU918mhpfN2Y/RNqevuuCsXasMVAy+CQ2lQwyeeIupg6xWYEZ5F0XwR5UGkPkQyQMB3OZEx+u03gzw4CU/Hsd7YnpUjapVqFOA8gYmCcoiaNGrLrkp0hlWfBKKIj5oXt6YKYv69QLgSv3wXoBWjn17RIb0hjxnGDIlrB8EwcpmW4Ie3Rf3+eH8Zahjuo88isISP5NPUakbDpuHK1s1AB/1kfMNx2YOd8xYvHSDXSXVwKFvD9dCtc07A+GeN7/D1/cSqna7/7Ec/3YYFjGtrpzo4vgdZzgDV1MQOm/mQnSqjNguATSo0fQb0wRviR7RO6TyeycTcJDtoOoGrq9hpmYYNN5/tB6NAxODVhh5nCfQitNVLP8iBXsIrb2V5qcnY0EvzxsVs+gvdMRY4B/znq55DAnphsRTfGsh9HmOrZCqnUCgls/jNBOf8217HPEVkPZT8HGOpQJr7uaBWBv8NPrj2GmHRPybxWHT1XMYaneL834oUghJePSNudw0Jykc2i4M32Pw3/ai8Hy7izuRM/RKryiodq5CQMSYYR7Htw0mDjeEs+TVyuZnWXBmYNyrifCwa30+WRxC79Ga6HM3hQWRsGxs73ihW8vrP/AGVoML9o=
