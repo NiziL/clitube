@@ -33,6 +33,18 @@ class Item(object):
     def uid(self):
         return self._uid
 
+    def display(self, max_size, selected=False):
+        display = self._name
+        if selected:
+            display = ' ' + display
+
+        if len(display) > max_size:
+            display = display[:max_size]
+        else:
+            display = display + ' ' * (max_size - len(display))
+
+        return display
+
 
 def youtube_search(search):
     for page in itertools.count(start=1, step=1):
@@ -90,6 +102,7 @@ def main(stdscr):
 
     curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
     curses.init_pair(2, curses.COLOR_YELLOW, curses.COLOR_BLACK)
+    curses.init_pair(3, curses.COLOR_BLUE, curses.COLOR_BLACK)
 
     curses.curs_set(False)
     stdscr.nodelay(True)
@@ -158,12 +171,9 @@ def main(stdscr):
                 elif i + print_min in selected:
                     style = curses.color_pair(2)
 
-                if len(item.name) > int(width/2):
-                    display = item.name[:int(width/2)-3]
-                else:
-                    display = item.name + u' '*(int(width/2)-len(item.name)-1)
-
+                display = item.display(int(width/2)-2, selected=i+print_min in selected)
                 search_scr.addstr(i+1, 1, display, style)
+
             search_scr.box()
 
             redraw_search = False
@@ -181,13 +191,11 @@ def main(stdscr):
             for i, item in enumerate(playlist[pl_print_min:pl_print_max]):
                 style = 0
                 if i + pl_print_min == play_index:
-                    style = curses.A_REVERSE
+                    style = curses.A_BOLD | curses.color_pair(3)
 
-                if len(item.name) > int(width/2)-2:
-                    display = item.name[:int(width/2)-2]
-                else:
-                    display = item.name + u' '*(int(width/2)-2-len(item.name))
+                display = item.display(int(width/2)-2)
                 playlist_scr.addstr(i+1, 1, display, style)
+
             playlist_scr.box()
             playlist_scr.addstr(0, int(width/4)-5, " Playlist ", curses.A_BOLD)
 
