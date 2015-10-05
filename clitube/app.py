@@ -33,17 +33,12 @@ class Item(object):
     def uid(self):
         return self._uid
 
-    def display(self, max_size, selected=False):
-        display = self._name
-        if selected:
-            display = ' ' + display
-
-        if len(display) > max_size:
-            display = display[:max_size]
+    def display(self, size):
+        delta = size - len(self._name)
+        if delta < 0:
+            return self._name[:size]
         else:
-            display = display + ' ' * (max_size - len(display))
-
-        return display
+            return self._name + delta*' '
 
 
 def youtube_search(search):
@@ -102,7 +97,7 @@ def main(stdscr):
 
     curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)
     curses.init_pair(2, curses.COLOR_YELLOW, curses.COLOR_BLACK)
-    curses.init_pair(3, curses.COLOR_BLUE, curses.COLOR_BLACK)
+    curses.init_pair(3, curses.COLOR_GREEN, curses.COLOR_BLACK)
 
     curses.curs_set(False)
     stdscr.nodelay(True)
@@ -140,64 +135,60 @@ def main(stdscr):
 
         # renderer
         if (height, width) != stdscr.getmaxyx():
+            stdscr.clear()
+
             height, width = stdscr.getmaxyx()
-            redraw_title = True
-            redraw_search = True
+            search_height, search_width = height-1, int(0.6*width)
+            playlist_height, playlist_width = height-1, int(0.4*width)
+
+            redraw_clitube = True
             redraw_playlist = True
             redraw_cmd = True
 
-        if redraw_title:
-            stdscr.clear()
-            stdscr.addstr(0, int(width/2)-4, u"CLItube",
-                          curses.color_pair(1) | curses.A_BOLD)
-
-            redraw_title = False
-
-        if redraw_search:
-            search_scr = stdscr.subwin(height-2, int(width/2), 1, 0)
-            search_scr.clear()
-
+        if redraw_clitube:
             if position < print_min:
                 print_min = position
-            elif position - print_min > height-5:
-                print_min = abs(height - 5 - position)
+            elif position - print_min > search_height-3:
+                print_min = position - search_height + 3
 
-            for i, item in enumerate(items[print_min:print_min+height-4]):
-                style = 0
-                if i + print_min == position and i + print_min in selected:
-                    style = curses.A_REVERSE | curses.color_pair(2)
-                elif i + print_min == position:
-                    style = curses.A_REVERSE
-                elif i + print_min in selected:
+            search_scr = stdscr.subwin(search_height, search_width, 0, 0)
+            search_scr.clear()
+            search_scr.box()
+            search_scr.addstr(0, int(search_width/2)-5, u" CLItube ",
+                              curses.A_BOLD)
+            for i, item in enumerate(items[print_min:print_min+search_height-2]):
+                style = curses.color_pair(0)
+                display = item.display(search_width-2)
+                if i + print_min in selected:
                     style = curses.color_pair(2)
-
-                display = item.display(int(width/2)-2, selected=i+print_min in selected)
+                    display = ' ' + display[:-1]
+                if i + print_min == position:
+                    style = style | curses.A_REVERSE
                 search_scr.addstr(i+1, 1, display, style)
 
-            search_scr.box()
-
-            redraw_search = False
+            redraw_clitube = False
 
         if redraw_playlist:
-            playlist_scr = stdscr.subwin(height-2, int(width/2),
-                                         1, int(width/2))
-            playlist_scr.clear()
+
             if play_index-1 < pl_print_min:
                 pl_print_min = max(0, play_index-1)
-            elif play_index - pl_print_min > height-6:
-                pl_print_min = abs(height - 5 - play_index)+1
-            pl_print_max = pl_print_min+height-3
+            elif play_index - pl_print_min > playlist_height-4:
+                pl_print_min = min(len(playlist)-playlist_height+2, play_index - playlist_height + 4)
 
-            for i, item in enumerate(playlist[pl_print_min:pl_print_max]):
+            playlist_scr = stdscr.subwin(playlist_height, playlist_width,
+                                         0, search_width)
+            playlist_scr.clear()
+            playlist_scr.box()
+            playlist_scr.addstr(0, int(playlist_width/2)-5, " Playlist ", curses.A_BOLD)
+
+            for i, item in enumerate(playlist[pl_print_min:pl_print_min+height-3]):
                 style = 0
                 if i + pl_print_min == play_index:
                     style = curses.A_BOLD | curses.color_pair(3)
 
-                display = item.display(int(width/2)-2)
+                display = item.display(playlist_width-2)
                 playlist_scr.addstr(i+1, 1, display, style)
 
-            playlist_scr.box()
-            playlist_scr.addstr(0, int(width/4)-5, " Playlist ", curses.A_BOLD)
 
             redraw_playlist = False
 
@@ -254,7 +245,7 @@ def main(stdscr):
                         search_engine = youtube_search(pattern)
                         for uid, name in next(search_engine):
                             items.append(Item(uid, name))
-                        redraw_search = True
+                        redraw_clitube = True
 
                 cmd = ""
                 cmdMode = False
@@ -273,53 +264,43 @@ def main(stdscr):
                 except TypeError:
                     pass
 
-        elif c == 'j':
-            if len(items) > 0:
+        elif c in ('j', 'k', 'G', 'g') and len(items) > 0:
+            if c == 'j' :
                 position += 1
                 position %= len(items)
-            redraw_search = True
-
-        elif c == 'G':
-            if len(items) > 0:
-                position = len(items)-1
-            redraw_search = True
-
-        elif c == 'k':
-            if len(items) > 0:
+            elif c == 'k':
                 position -= 1
                 position %= len(items)
-            redraw_search = True
+            elif c == 'G':
+                position = len(items)-1
+            elif c == 'g':
+                position = 0
 
-        elif c == 'g':
-            position = 0
-            redraw_search = True
+
+
+            redraw_clitube = True
 
         elif c == ' ':
             if position in selected:
                 selected.remove(position)
             else:
                 selected.append(position)
-            redraw_search = True
+            redraw_clitube = True
 
-        elif c == 'p':
-            if not player is None:
-                with open(PIPE_CMD, 'w') as control:
-                    control.write('pause\n')
+        elif c in ('p', 'm', '+', '-') and not player is None:
+            cmd = ''
+            if c == 'p':
+                cmd = 'pause'
+            elif c == 'm':
+                cmd = 'mute'
+            elif c == '+':
+                cmd = 'volume +1'
+            elif c == '-':
+                cmd = 'colume -1'
+            cmd = cmd + '\n'
 
-        elif c == 'm':
-            if not player is None:
-                with open(PIPE_CMD, 'w') as control:
-                    control.write('mute\n')
-
-        elif c == '+':
-            if not player is None:
-                with open(PIPE_CMD, 'w') as control:
-                    control.write('volume +1\n')
-
-        elif c == '-':
-            if not player is None:
-                with open(PIPE_CMD, 'w') as control:
-                    control.write('volume -1\n')
+            with open(PIPE_CMD, 'w') as control:
+                control.write(cmd)
 
         elif c == '\n':
             if len(selected) == 0:
@@ -328,7 +309,7 @@ def main(stdscr):
                 for i in selected:
                     playlist.append(items[i])
                 selected = []
-            redraw_search = True
+            redraw_clitube = True
             redraw_playlist = True
 
         elif c == '/':
@@ -345,7 +326,7 @@ def main(stdscr):
             if not search_engine is None:
                 for uid, name in next(search_engine):
                     items.append(Item(uid, name))
-                redraw_search = True
+                redraw_clitube = True
 
     stop(dl, player)
 
