@@ -8,7 +8,7 @@ install:
 - pip install --user .
 script:
 - make test
-before_deploy: "pip install twine"
+before_deploy: "pip install --user twine"
 deploy:
   provider: pypi
   user: NiZiL
