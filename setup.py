@@ -28,5 +28,7 @@ setup(
     packages=['clitube'],
     scripts=['scripts/clitube'],
 
+    test_suite='tests',
+
     install_requires=['requests', 'youtube-dl']
 )
