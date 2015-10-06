@@ -1,6 +1,6 @@
 # CLITube
 
-![travis](https://travis-ci.org/NiZiL/clitube.svg)
+[![travis](https://travis-ci.org/NiZiL/clitube.svg)](https://travis-ci.org/NiZiL/cliitube)
 
 
 A curses-based interface to browse YouTube, with vi-like keybindings.  
@@ -11,18 +11,20 @@ Powered by [mplayer](http://www.mplayerhq.hu/) and [youtube-dl](https://rg3.gith
 
 ### Installation
 
+WARNING: CLITube have been only tested with python3 ! There is no python2-compability guaranteed !
+
 ##### Using pip
 
 ```bash
-# pip install clitube
+pip install clitube
 ```
 
 ##### Manual
 
 ```bash
-% git clone https://github.com/NiZiL/clitube.git
-% cd clitube
-# make install
+git clone https://github.com/NiZiL/clitube.git
+cd clitube
+[sudo] make install
 ```
 
 
@@ -59,5 +61,6 @@ Powered by [mplayer](http://www.mplayerhq.hu/) and [youtube-dl](https://rg3.gith
 ### Roadmap
 
 - Playlist manipulation
+- Search results filtering
 - Real vi-like keybinding (e.g. :2n)
 - Download
