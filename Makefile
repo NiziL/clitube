@@ -1,4 +1,4 @@
-all: test build
+all: test install clean
 
 test:
 	python setup.py test
@@ -8,9 +8,6 @@ build:
 
 install:
 	python setup.py install
-
-uninstall:
-	python setup.py uninstall
 
 clean:
 	rm -rf *.egg-info dist build

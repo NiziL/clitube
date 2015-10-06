@@ -3,8 +3,11 @@
 from setuptools import setup
 
 
-VERSION = '0.2.1'
+VERSION = '0.2.2'
 DESCRIPTION = 'Browse and listen Youtube video soundtrack from your terminal'
+LONG_DESCRIPTION = """\
+Please visit the GitHub page!
+"""
 
 setup(
     name='clitube',
@@ -16,6 +19,7 @@ setup(
     download_url='https://github.com/NiZiL/clitube/tarball/'+VERSION,
 
     description=DESCRIPTION,
+    long_description=LONG_DESCRIPTION,
     keywords=['YouTube', 'CLI'],
     classifiers=['Development Status :: 3 - Alpha',
                  'Environment :: Console :: Curses',
@@ -27,6 +31,8 @@ setup(
 
     packages=['clitube'],
     scripts=['scripts/clitube'],
+
+    test_suite='tests',
 
     install_requires=['requests', 'youtube-dl']
 )
