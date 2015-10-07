@@ -4,6 +4,8 @@ python:
 - '3.3'
 - '3.4'
 - '3.5'
+before_install:
+- python --version
 install:
 - python setup.py install
 script:
