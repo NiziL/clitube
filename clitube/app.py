@@ -10,26 +10,17 @@ import itertools
 
 import clitube.model as model
 
-FNULL = open(os.devnull, 'wb')
 
-PATTERN_ID = re.compile("(?<=data-context-item-id=\")[\w-]{11}(?=\")")
-PATTERN_NAME = re.compile("(?<=dir=\"ltr\">).*(?=</a><span)")
 URL_SEARCH = "https://www.youtube.com/results?" \
              "filters=video&search_query={}&page={}"
 URL_VIDEO = "https://www.youtube.com/watch?v={}"
+PATTERN_ID = re.compile("(?<=data-context-item-id=\")[\w-]{11}(?=\")")
+PATTERN_NAME = re.compile("(?<=dir=\"ltr\">).*(?=</a><span)")
 
 PIPE_STREAM = "/tmp/clitube-stream"
 PIPE_CMD = "/tmp/clitube-cmd"
 
-
-def youtube_search(search):
-    for page in itertools.count(start=1, step=1):
-        r = requests.get(URL_SEARCH.format(search, page))
-        if r.status_code == 200:
-            yield zip(re.findall(PATTERN_ID, r.text),
-                      map(html.unescape, re.findall(PATTERN_NAME, r.text)))
-        else:
-            raise Exception("YouTube is broken :(")
+FNULL = open(os.devnull, 'wb')
 
 
 def init():
@@ -41,6 +32,16 @@ def init():
         os.mkfifo(PIPE_CMD)
     except OSError:
         pass
+
+
+def youtube_search(search):
+    for page in itertools.count(start=1, step=1):
+        r = requests.get(URL_SEARCH.format(search, page))
+        if r.status_code == 200:
+            yield zip(re.findall(PATTERN_ID, r.text),
+                      map(html.unescape, re.findall(PATTERN_NAME, r.text)))
+        else:
+            raise Exception("YouTube is broken :(")
 
 
 def play(uid):
@@ -95,7 +96,7 @@ def main(stdscr):
     cmd = ""
 
     while True:
-        # sound "engine", hum...
+        # sound "engine"
         if not playlist.is_over():
             if player is None:
                 dl, player = play(playlist.current_uid())
@@ -105,7 +106,6 @@ def main(stdscr):
                 if player.returncode is not None:
                     player = None
                     playlist.next()
-
                     redraw_playlist = True
 
         # renderer
@@ -124,7 +124,8 @@ def main(stdscr):
             search_scr.box()
             search_scr.addstr(0, int(search_width/2)-5,
                               u" CLItube ", curses.A_BOLD)
-            for i, item in enumerate(itemlist.visible_items(search_height-2)):
+            visible_itemlist = itemlist.visible_items(search_height-2)
+            for i, item in enumerate(visible_itemlist):
                 style = curses.color_pair(0)
                 display = item.display(search_width-2)
                 if itemlist.is_selected(i):
@@ -142,7 +143,8 @@ def main(stdscr):
             playlist_scr.box()
             playlist_scr.addstr(0, int(playlist_width/2)-5,
                                 u" Playlist ", curses.A_BOLD)
-            for i, item in enumerate(playlist.visible_items(playlist_height-2)):
+            visible_playlist = playlist.visible_items(playlist_height-2)
+            for i, item in enumerate(visible_playlist):
                 style = 0
                 display = item.display(playlist_width-2)
                 if playlist.is_current(i):
@@ -234,6 +236,7 @@ def main(stdscr):
 
         elif c == ' ':
             itemlist.select()
+            itemlist.go_down()
             redraw_clitube = True
 
         elif c in ('p', 'm', '+', '-') and player is not None:
@@ -259,6 +262,7 @@ def main(stdscr):
                 redraw_clitube = True
             else:
                 playlist.add(itemlist.position_item())
+                itemlist.go_down()
             redraw_playlist = True
 
         elif c == ':':
