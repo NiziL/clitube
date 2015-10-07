@@ -236,6 +236,7 @@ def main(stdscr):
 
         elif c == ' ':
             itemlist.select()
+            itemlist.go_down()
             redraw_clitube = True
 
         elif c in ('p', 'm', '+', '-') and player is not None:
@@ -261,6 +262,7 @@ def main(stdscr):
                 redraw_clitube = True
             else:
                 playlist.add(itemlist.position_item())
+                itemlist.go_down()
             redraw_playlist = True
 
         elif c == ':':
