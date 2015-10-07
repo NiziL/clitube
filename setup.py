@@ -4,7 +4,7 @@ if sys.version_info < (3, ):
     sys.exit("CLITube is a python3-only module !")
 
 
-VERSION = '0.2.2'
+VERSION = '0.2.3'
 DESCRIPTION = 'Browse and listen Youtube video soundtrack from your terminal'
 LONG_DESCRIPTION = """\
 Please visit the GitHub repository!
