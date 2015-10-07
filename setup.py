@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
-
-from setuptools import setup
+import sys
+if sys.version_info < (3, ):
+    sys.exit("CLITube is a python3-only module !")
 
 
 VERSION = '0.2.2'
 DESCRIPTION = 'Browse and listen Youtube video soundtrack from your terminal'
 LONG_DESCRIPTION = """\
-Please visit the GitHub page!
+Please visit the GitHub repository!
 """
 
+from setuptools import setup
 setup(
     name='clitube',
     version=VERSION,

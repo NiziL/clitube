@@ -11,21 +11,27 @@ Powered by [mplayer](http://www.mplayerhq.hu/) and [youtube-dl](https://rg3.gith
 
 ### Installation
 
-WARNING: CLITube have been only tested with python3 ! There is no python2-compability guaranteed !
+*WARNING:* CLITube rely on the `html` module, so it's python3 only!
 
 ##### Using pip
 
 ```bash
-pip install clitube
+[sudo] pip install clitube
 ```
+
+You have to use `python3 -m pip install clitube` or `pip3` if your default `python` is python2.
+Otherwise, you'll get the message `CLITube is a python3-only module`. 
 
 ##### Manual
 
 ```bash
 git clone https://github.com/NiZiL/clitube.git
 cd clitube
-[sudo] make install
+[sudo] python setup.py install
 ```
+
+You have to use `[sudo] python3 setup.py install` if your default `python` is python2.
+Otherwise, you'll get the message `CLITube is a python3-only module`. 
 
 
 ### Key-bindings
@@ -61,6 +67,8 @@ cd clitube
 ### Roadmap
 
 - Playlist manipulation
+- Save & load playlist
 - Search results filtering
 - Real vi-like keybinding (e.g. :2n)
 - Download
+- Python2 compatibility
