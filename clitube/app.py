@@ -98,7 +98,7 @@ def main(stdscr):
     while True:
         # sound "engine"
         if not playlist.is_over():
-            if player is None:
+            if player is None and not playlist.is_over():
                 dl, player = play(playlist.current_uid())
             else:
                 player.poll()
@@ -259,10 +259,10 @@ def main(stdscr):
                 for item in itemlist.selected_items():
                     playlist.add(item)
                 itemlist.unselect_all()
-                redraw_clitube = True
             else:
                 playlist.add(itemlist.position_item())
                 itemlist.go_down()
+            redraw_clitube = True
             redraw_playlist = True
 
         elif c == ':':

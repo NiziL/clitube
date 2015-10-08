@@ -96,11 +96,14 @@ class ItemList(object):
 
 class Playlist(object):
 
-    def __init__(self, space_before=1):
+    def __init__(self, space=1):
+        self._space = space
+        self.clear()
+
+    def clear(self):
         self._list = []
         self._iplay = 0
         self._offset = 0
-        self._space_before = space_before
 
     def add(self, item):
         self._list.append(item)
@@ -113,8 +116,8 @@ class Playlist(object):
 
     def next(self, step=1, secure=True):
         self._iplay += step
-        if secure and self._iplay > len(self._list)-1:
-            self._iplay = len(self._list)-1
+        if secure and self._iplay > len(self._list):
+            self._iplay = len(self._list)
 
     def previous(self, step=1, secure=True):
         self._iplay -= step
@@ -122,10 +125,11 @@ class Playlist(object):
             self._iplay = 0
 
     def _compute_offset(self, max_len):
-        if self._iplay-self._space_before < self._offset:
-            self._offset = max(0, self._iplay-self._space_before)
-        elif self._iplay - self._offset > max_len-2:
-            self._offset = min(len(self._list)-max_len, self._iplay-max_len+2)
+        if self._iplay-self._space < self._offset:
+            self._offset = max(0, self._iplay-self._space)
+        elif self._iplay - self._offset > max_len-self._space-1:
+            self._offset = min(len(self._list)-max_len,
+                               self._iplay-max_len+self._space+1)
 
     def visible_items(self, max_len):
         self._compute_offset(max_len)
