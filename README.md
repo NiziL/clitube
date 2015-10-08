@@ -11,16 +11,15 @@ Powered by [mplayer](http://www.mplayerhq.hu/) and [youtube-dl](https://rg3.gith
 
 ### Installation
 
-*WARNING:* CLITube rely on the `html` module, so it's python3 only!
+**WARNING:** CLITube rely on `html.unescape()` function, python3.4+ only!
+If your default `python` is python2, you'll get the message `[ERROR] CLITube requires python3.4 and above.`.
+You should use `python3 setup.py install`, `python3 -m pip install` or `pip3 install` in this case.
 
 ##### Using pip
 
 ```bash
 [sudo] pip install clitube
 ```
-
-You have to use `python3 -m pip install clitube` or `pip3` if your default `python` is python2.
-Otherwise, you'll get the message `CLITube is a python3-only module`. 
 
 ##### Manual
 
@@ -29,9 +28,6 @@ git clone https://github.com/NiZiL/clitube.git
 cd clitube
 [sudo] python setup.py install
 ```
-
-You have to use `[sudo] python3 setup.py install` if your default `python` is python2.
-Otherwise, you'll get the message `CLITube is a python3-only module`. 
 
 
 ### Key-bindings
