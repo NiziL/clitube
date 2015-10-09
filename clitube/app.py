@@ -44,19 +44,20 @@ def youtube_search(search):
             raise Exception("YouTube is broken :(")
 
 
-def play(uid):
+def download(uid, path):
     url = URL_VIDEO.format(uid)
+    return subprocess.Popen(['youtube-dl', url,
+                             '-o', path],
+                            stdout=FNULL, stderr=FNULL)
 
-    dl = subprocess.Popen(['youtube-dl', url,
-                           '-o', PIPE_STREAM],
-                          stdout=FNULL, stderr=FNULL)
 
+def play(uid):
+    dl = download(uid, PIPE_STREAM)
     player = subprocess.Popen(['mplayer',
                                '-vo', 'null', '-slave',
                                '-input', 'file=%s' % PIPE_CMD,
                                PIPE_STREAM],
                               stdout=FNULL, stderr=FNULL)
-
     return dl, player
 
 
@@ -174,6 +175,18 @@ def main(stdscr):
                 if cmd == ':q' or cmd == ':quit':
                     break
 
+                elif cmd == ':dl' or cmd == ':download':
+                    try:
+                        pattern = cmd[cmd.index(' ')+1:]
+                    except ValueError:
+                        pattern = ''
+
+                    if pattern == '':
+                        pattern = "%(title)s"
+
+                    if not itemlist.is_empty():
+                        download(itemlist.get_current_uid(), pattern)
+
                 elif cmd == ':n' or cmd == ':next':
                     playlist.next()
                     dl, player = stop(dl, player)
@@ -223,7 +236,7 @@ def main(stdscr):
                     pass
 
         # KEY-BINDINGS
-        elif c in ('j', 'k', 'G', 'g') and itemlist.is_movable():
+        elif c in ('j', 'k', 'G', 'g') and not itemlist.is_empty():
             if c == 'j':
                 itemlist.go_down()
             elif c == 'k':

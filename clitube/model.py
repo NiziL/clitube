@@ -51,8 +51,11 @@ class ItemList(object):
     def go_bottom(self):
         self._position = len(self._items)-1
 
-    def is_movable(self):
-        return len(self._items) > 0
+    def is_empty(self):
+        return len(self._items) == 0
+
+    def get_current_uid(self):
+        return self._items[self._position].uid
 
     def _compute_offset(self, max_len):
         if self._position < self._offset:
