@@ -248,7 +248,7 @@ def main(stdscr):
             elif c == '+':
                 cmd = 'volume +1'
             elif c == '-':
-                cmd = 'colume -1'
+                cmd = 'volume -1'
             cmd = cmd + '\n'
 
             with open(PIPE_CMD, 'w') as control:
