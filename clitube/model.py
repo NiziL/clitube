@@ -3,9 +3,10 @@
 
 class Item(object):
 
-    def __init__(self, uid, name):
+    def __init__(self, uid, name, time):
         self._uid = uid
         self._name = name
+        self._time = time
 
     @property
     def name(self):
@@ -16,11 +17,11 @@ class Item(object):
         return self._uid
 
     def display(self, size):
-        delta = size - len(self._name)
+        delta = size - len(self._name) - len(self._time) -1
         if delta < 0:
-            return self._name[:size]
+            return self._name[:size-len(self._time)-1] + ' ' + self._time
         else:
-            return self._name + delta*' '
+            return self._name + ' '*(delta+1) + self._time
 
 
 class ItemList(object):

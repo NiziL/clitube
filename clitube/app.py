@@ -16,6 +16,7 @@ URL_SEARCH = "https://www.youtube.com/results?" \
 URL_VIDEO = "https://www.youtube.com/watch?v={}"
 PATTERN_ID = re.compile("(?<=data-context-item-id=\")[\w-]{11}(?=\")")
 PATTERN_NAME = re.compile("(?<=dir=\"ltr\">).*(?=</a><span)")
+PATTERN_TIME = re.compile("(?<=<span class=\"video-time\" aria-hidden=\"true\">)[0-9]?[0-9]?:?[0-5]?[0-9]:[0-5][0-9](?=</span>)")
 
 PIPE_STREAM = "/tmp/clitube-stream"
 PIPE_CMD = "/tmp/clitube-cmd"
@@ -39,7 +40,8 @@ def youtube_search(search):
         r = requests.get(URL_SEARCH.format(search, page))
         if r.status_code == 200:
             yield zip(re.findall(PATTERN_ID, r.text),
-                      map(html.unescape, re.findall(PATTERN_NAME, r.text)))
+                      map(html.unescape, re.findall(PATTERN_NAME, r.text)),
+                      re.findall(PATTERN_TIME, r.text))
         else:
             raise Exception("YouTube is broken :(")
 
@@ -55,6 +57,8 @@ def play(uid):
     dl = download(uid, PIPE_STREAM)
     player = subprocess.Popen(['mplayer',
                                '-vo', 'null', '-slave',
+                               # use cache to fix long pause crash
+                               # '-cache', '',
                                '-input', 'file=%s' % PIPE_CMD,
                                PIPE_STREAM],
                               stdout=FNULL, stderr=FNULL)
@@ -211,8 +215,8 @@ def main(stdscr):
                     if pattern != '':
                         search_engine = youtube_search(pattern)
                         itemlist.clear()
-                        for uid, name in next(search_engine):
-                            itemlist.add(model.Item(uid, name))
+                        for uid, name, time in next(search_engine):
+                            itemlist.add(model.Item(uid, name, time))
                         redraw_clitube = True
 
                 cmd = ""
