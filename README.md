@@ -53,18 +53,19 @@ cd clitube
 
 | Command | Effect |
 |---------|--------|
-| search  | search on Youtube |
+| search pattern  | search pattern on Youtube |
 | quit (q)| quit |
 | next (n)| next soundtrack on the playlist |
 | previous (p) | previous soundtrack on the playlist |
 | clear (clr) | clear the playlist |
+| download (dl) file_path | download result at current position into file_path |
 
 
 ### Roadmap
 
+- ~~Download~~
 - Playlist manipulation
 - Save & load playlist
 - Search results filtering
 - Real vi-like keybinding (e.g. :2n)
-- Download
 - Python2 compatibility

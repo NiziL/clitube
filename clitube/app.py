@@ -16,6 +16,7 @@ URL_SEARCH = "https://www.youtube.com/results?" \
 URL_VIDEO = "https://www.youtube.com/watch?v={}"
 PATTERN_ID = re.compile("(?<=data-context-item-id=\")[\w-]{11}(?=\")")
 PATTERN_NAME = re.compile("(?<=dir=\"ltr\">).*(?=</a><span)")
+PATTERN_TIME = re.compile("(?<=<span class=\"video-time\" aria-hidden=\"true\">)[0-9]?[0-9]?:?[0-5]?[0-9]:[0-5][0-9](?=</span>)")
 
 PIPE_STREAM = "/tmp/clitube-stream"
 PIPE_CMD = "/tmp/clitube-cmd"
@@ -39,24 +40,28 @@ def youtube_search(search):
         r = requests.get(URL_SEARCH.format(search, page))
         if r.status_code == 200:
             yield zip(re.findall(PATTERN_ID, r.text),
-                      map(html.unescape, re.findall(PATTERN_NAME, r.text)))
+                      map(html.unescape, re.findall(PATTERN_NAME, r.text)),
+                      re.findall(PATTERN_TIME, r.text))
         else:
             raise Exception("YouTube is broken :(")
 
 
-def play(uid):
+def download(uid, path):
     url = URL_VIDEO.format(uid)
+    return subprocess.Popen(['youtube-dl', url,
+                             '-o', path],
+                            stdout=FNULL, stderr=FNULL)
 
-    dl = subprocess.Popen(['youtube-dl', url,
-                           '-o', PIPE_STREAM],
-                          stdout=FNULL, stderr=FNULL)
 
+def play(uid):
+    dl = download(uid, PIPE_STREAM)
     player = subprocess.Popen(['mplayer',
                                '-vo', 'null', '-slave',
+                               # use cache to fix long pause crash
+                               # '-cache', '',
                                '-input', 'file=%s' % PIPE_CMD,
                                PIPE_STREAM],
                               stdout=FNULL, stderr=FNULL)
-
     return dl, player
 
 
@@ -98,7 +103,7 @@ def main(stdscr):
     while True:
         # sound "engine"
         if not playlist.is_over():
-            if player is None:
+            if player is None and not playlist.is_over():
                 dl, player = play(playlist.current_uid())
             else:
                 player.poll()
@@ -174,6 +179,18 @@ def main(stdscr):
                 if cmd == ':q' or cmd == ':quit':
                     break
 
+                elif cmd == ':dl' or cmd == ':download':
+                    try:
+                        pattern = cmd[cmd.index(' ')+1:]
+                    except ValueError:
+                        pattern = ''
+
+                    if pattern == '':
+                        pattern = "%(title)s"
+
+                    if not itemlist.is_empty():
+                        download(itemlist.get_current_uid(), pattern)
+
                 elif cmd == ':n' or cmd == ':next':
                     playlist.next()
                     dl, player = stop(dl, player)
@@ -198,8 +215,8 @@ def main(stdscr):
                     if pattern != '':
                         search_engine = youtube_search(pattern)
                         itemlist.clear()
-                        for uid, name in next(search_engine):
-                            itemlist.add(model.Item(uid, name))
+                        for uid, name, time in next(search_engine):
+                            itemlist.add(model.Item(uid, name, time))
                         redraw_clitube = True
 
                 cmd = ""
@@ -223,7 +240,7 @@ def main(stdscr):
                     pass
 
         # KEY-BINDINGS
-        elif c in ('j', 'k', 'G', 'g') and itemlist.is_movable():
+        elif c in ('j', 'k', 'G', 'g') and not itemlist.is_empty():
             if c == 'j':
                 itemlist.go_down()
             elif c == 'k':
@@ -248,7 +265,7 @@ def main(stdscr):
             elif c == '+':
                 cmd = 'volume +1'
             elif c == '-':
-                cmd = 'colume -1'
+                cmd = 'volume -1'
             cmd = cmd + '\n'
 
             with open(PIPE_CMD, 'w') as control:
@@ -259,10 +276,10 @@ def main(stdscr):
                 for item in itemlist.selected_items():
                     playlist.add(item)
                 itemlist.unselect_all()
-                redraw_clitube = True
             else:
                 playlist.add(itemlist.position_item())
                 itemlist.go_down()
+            redraw_clitube = True
             redraw_playlist = True
 
         elif c == ':':

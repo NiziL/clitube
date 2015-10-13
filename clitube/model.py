@@ -3,9 +3,10 @@
 
 class Item(object):
 
-    def __init__(self, uid, name):
+    def __init__(self, uid, name, time):
         self._uid = uid
         self._name = name
+        self._time = time
 
     @property
     def name(self):
@@ -16,11 +17,11 @@ class Item(object):
         return self._uid
 
     def display(self, size):
-        delta = size - len(self._name)
+        delta = size - len(self._name) - len(self._time) -1
         if delta < 0:
-            return self._name[:size]
+            return self._name[:size-len(self._time)-1] + ' ' + self._time
         else:
-            return self._name + delta*' '
+            return self._name + ' '*(delta+1) + self._time
 
 
 class ItemList(object):
@@ -51,8 +52,11 @@ class ItemList(object):
     def go_bottom(self):
         self._position = len(self._items)-1
 
-    def is_movable(self):
-        return len(self._items) > 0
+    def is_empty(self):
+        return len(self._items) == 0
+
+    def get_current_uid(self):
+        return self._items[self._position].uid
 
     def _compute_offset(self, max_len):
         if self._position < self._offset:
@@ -96,11 +100,14 @@ class ItemList(object):
 
 class Playlist(object):
 
-    def __init__(self, space_before=1):
+    def __init__(self, space=1):
+        self._space = space
+        self.clear()
+
+    def clear(self):
         self._list = []
         self._iplay = 0
         self._offset = 0
-        self._space_before = space_before
 
     def add(self, item):
         self._list.append(item)
@@ -113,8 +120,8 @@ class Playlist(object):
 
     def next(self, step=1, secure=True):
         self._iplay += step
-        if secure and self._iplay > len(self._list)-1:
-            self._iplay = len(self._list)-1
+        if secure and self._iplay > len(self._list):
+            self._iplay = len(self._list)
 
     def previous(self, step=1, secure=True):
         self._iplay -= step
@@ -122,10 +129,11 @@ class Playlist(object):
             self._iplay = 0
 
     def _compute_offset(self, max_len):
-        if self._iplay-self._space_before < self._offset:
-            self._offset = max(0, self._iplay-self._space_before)
-        elif self._iplay - self._offset > max_len-2:
-            self._offset = min(len(self._list)-max_len, self._iplay-max_len+2)
+        if self._iplay-self._space < self._offset:
+            self._offset = max(0, self._iplay-self._space)
+        elif self._iplay - self._offset > max_len-self._space-1:
+            self._offset = min(len(self._list)-max_len,
+                               self._iplay-max_len+self._space+1)
 
     def visible_items(self, max_len):
         self._compute_offset(max_len)
