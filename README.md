@@ -1,17 +1,20 @@
 # CLITube
 
-[![travis](https://travis-ci.org/NiZiL/clitube.svg)](https://travis-ci.org/NiZiL/cliitube)
-
+[![travis](https://img.shields.io/travis/NiZiL/clitube/master.svg?style=flat-square&label=master build)](https://travis-ci.org/NiZiL/clitube)
+[![travis](https://img.shields.io/travis/NiZiL/clitube/dev.svg?style=flat-square&label=dev build)](https://travis-ci.org/NiZiL/clitube)
+[![pypi](https://img.shields.io/pypi/v/clitube.svg?style=flat-square)](https://pypi.python.org/pypi/clitube)
+[![pypi](https://img.shields.io/pypi/status/clitube.svg?style=flat-square)](https://pypi.python.org/pypi/clitube)
+[![pypi](https://img.shields.io/pypi/format/clitube.svg?style=flat-square)](https://pypi.python.org/pypi/clitube)
+[![pypi](https://img.shields.io/pypi/dm/clitube.svg?style=flat-square)](https://pypi.python.org/pypi/clitube)
 
 A curses-based interface to browse YouTube, with vi-like keybindings.  
 Powered by [mplayer](http://www.mplayerhq.hu/) and [youtube-dl](https://rg3.github.io/youtube-dl/).
 
 ![screenshoot](https://raw.githubusercontent.com/NiZiL/clitube/master/clitube.gif)
 
-
 ### Installation
 
-**WARNING:** CLITube rely on `html.unescape()` function, python3.4+ only!
+**WARNING:** CLITube rely on `html.unescape()`, python3.4+ only!  
 If your default `python` is python2, you'll get the message `[ERROR] CLITube requires python3.4 and above.`.
 You should use `python3 setup.py install`, `python3 -m pip install` or `pip3 install` in this case.
 
