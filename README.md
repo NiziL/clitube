@@ -2,10 +2,6 @@
 
 [![travis](https://img.shields.io/travis/NiZiL/clitube/master.svg?style=flat-square&label=master build)](https://travis-ci.org/NiZiL/clitube)
 [![travis](https://img.shields.io/travis/NiZiL/clitube/dev.svg?style=flat-square&label=dev build)](https://travis-ci.org/NiZiL/clitube)
-[![pypi](https://img.shields.io/pypi/v/clitube.svg?style=flat-square)](https://pypi.python.org/pypi/clitube)
-[![pypi](https://img.shields.io/pypi/status/clitube.svg?style=flat-square)](https://pypi.python.org/pypi/clitube)
-[![pypi](https://img.shields.io/pypi/format/clitube.svg?style=flat-square)](https://pypi.python.org/pypi/clitube)
-[![pypi](https://img.shields.io/pypi/dm/clitube.svg?style=flat-square)](https://pypi.python.org/pypi/clitube)
 
 A curses-based interface to browse YouTube, with vi-like keybindings.  
 Powered by [mplayer](http://www.mplayerhq.hu/) and [youtube-dl](https://rg3.github.io/youtube-dl/).
