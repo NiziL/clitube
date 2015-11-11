@@ -294,8 +294,8 @@ def main(stdscr):
 
         elif c == 'n':
             if search_engine is not None:
-                for uid, name in next(search_engine):
-                    itemlist.add(model.Item(uid, name))
+                for uid, name, time in next(search_engine):
+                    itemlist.add(model.Item(uid, name, time))
                 redraw_clitube = True
 
     stop(dl, player)
