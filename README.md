@@ -1,15 +1,12 @@
 # CLITube
 
-[![](https://img.shields.io/travis/NiZiL/clitube/master.svg?style=flat-square&label=master build)](https://travis-ci.org/NiZiL/clitube)
-[![](https://img.shields.io/travis/NiZiL/clitube/dev.svg?style=flat-square&label=dev build)](https://travis-ci.org/NiZiL/clitube)
-
 A curses-based interface to browse YouTube, with vi-like keybindings.  
 Powered by [mplayer](http://www.mplayerhq.hu/) and [youtube-dl](https://rg3.github.io/youtube-dl/).
 
-![screenshoot](https://raw.githubusercontent.com/NiZiL/clitube/master/clitube.gif)
-
 **Disclaimer:**
 CLITube is a pet project initiated for fun after seeing [this command line](http://www.commandlinefu.com/commands/view/6689/stream-youtube-url-directly-to-mplayer). I don't maintain it anymore, mainly because the code is pretty messy.
+
+![screenshoot](https://raw.githubusercontent.com/NiZiL/clitube/master/clitube.gif)
 
 ### Installation
 
