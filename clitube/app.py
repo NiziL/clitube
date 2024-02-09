@@ -48,8 +48,9 @@ def youtube_search(search):
 
 def download(uid, path):
     url = URL_VIDEO.format(uid)
-    return subprocess.Popen(['youtube-dl', url,
-                             '-o', path],
+    return subprocess.Popen(['youtube-dl',
+                             '-o', path, '-f', '140',
+                             url],
                             stdout=FNULL, stderr=FNULL)
 
 
@@ -228,7 +229,7 @@ def main(stdscr):
                 cmdMode = False
                 stdscr.deleteln()
 
-            elif c == curses.KEY_BACKSPACE and len(cmd) > 1:
+            elif (c == curses.KEY_BACKSPACE or (type(c)==str and ord(c) == 127)) and len(cmd) > 1:
                 cmd = cmd[:-1]
                 redraw_cmd = True
 
